@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Untitled Document</title>
+  </head>
+  <body>
+    <canvas id="canvas">
+    
+    </canvas>
+    <script src="canvas.js"></script>
+    <script>
+      onload = function() {
+        /*
+          Ten ways to initialize (where the tag with the id "container" is a div):
+        
+          new Canvas(document.getElementById("canvas"));
+          new Canvas("canvas");
+          new Canvas(document.getElementById("container"));
+          new Canvas("container");
+          new Canvas();
+          new Canvas(300);
+          new Canvas(100, 300);
+          new Canvas("canvas", 300);
+          new Canvas("canvas", 100, 300);
+          new Canvas({
+            element: "canvas",
+            width: 100,
+            height: 300
+          });
+        */
+        var canvas = new Canvas("canvas", 600, 600);
+        canvas.rectangle("box", {
+          height: 50,
+          width: 50,
+          x: 200,
+          y: 10,
+          fillColor: rgba(127, 255, 255, 0),
+          strokeColor: rgba(0, 255, 0, 0.5),
+          strokeWidth: 10,
+          strokeJoin: "round"
+        });
+        canvas.circle("ball", {
+          x: 100,
+          y: 200,
+          radius: 20,
+          strokeColor: hex("000000"),
+          strokeWidth: 5
+        });
+        canvas.path("path", {
+          path: function(scale, x, y, bottom, skew) {
+            this.lineTo(x + 10 + skew * scale, y);
+            this.lineTo(x + bottom * scale, y + 5 * scale);
+            this.lineTo(x, y + bottom * scale);
+            this.lineTo(x + skew, y);
+          },
+          params: [5, 20, 20, 5, 0],
+          x: 20,
+          y: 20,
+          fillColor: hex("ff0000")
+        });
+        canvas.autoDraw(30); // doesn't use setInterval, rather a recursive setTimeout
+        canvas.animate("ball", {
+          radius: 50
+        }, 1250, "elasticOut");
+        canvas.animate("ball", {
+          strokeWidth: 1
+        }, 1000, "easeOut");
+        setTimeout(function() {
+          canvas.animate("box", {
+            x: 200,
+            y: 300,
+            fillColor: rgba(127, 255, 255, 1),
+            strokeColor: rgba(255, 0, 0, 1)
+          }, 1250, "bounceOut");
+        }, 1000);
+        setTimeout(function() {
+          canvas.animate("path", {
+            x: 200,
+            fillColor: hex("ff8800")
+          }, 1000, "backInOut");
+          canvas.pathAnimate("path", 0, 10, 1000, "backIn");
+          canvas.pathAnimate("path", 1, 200, 1000, "backInOut");
+          canvas.pathAnimate("path", 3, 10, 1000, "backInOut");
+          canvas.pathAnimate("path", 4, 30, 1000, "easeOut");
+          setTimeout(function() {
+            canvas.animate("path", {
+              fillColor: rgba(255, 127, 0, 0)
+            }, 1000, "bounceOut");
+            setTimeout(function() {
+              canvas.animate("ball", {
+                y: 305
+              }, 1000, "bounceOut");
+            }, 1000);
+          }, 1000);
+          canvas.circle("ball", {
+            fillColor: rgba(255,0,0,0.2)
+          });
+        }, 2500);
+      }
+    </script>
+  </body>
+</html>
