@@ -1,3 +1,5 @@
+[Demo](http://dl.dropbox.com/u/22134281/canvas-lib/index.html)
+
 Euclid (Canvas Library)
 =======================
 Canvas, unlike SVG, does not treat shapes as individual objects. In canvas, the only directly manipulatable objects are individual pixels. Euclid abstracts canvas and makes shapes act like separate objects. In addition, Euclid also provides very powerful animation and path manipulation helpers. Read the tutorial that follows for more information.
