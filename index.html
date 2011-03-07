@@ -31,6 +31,34 @@
           });
         */
         var canvas = new Canvas("canvas", 600, 600);
+        canvas.plot("graph", {
+          x: 200,
+          y: 200,
+          xMin: -20,
+          yMin: -20,
+          xMax: 20,
+          yMax: 20,
+          xScale: 10,
+          yScale: 10,
+          lineColor: rgba(0, 0, 255, 1),
+          lineWidth: 1,
+          equation: function(x, params) {
+            return params[0] * Math.sin(x * params[1]) + params[2];
+          },
+          params: [1, 1, 0]
+        });
+        canvas.arrayAnimate("graph", 0, 5, 3000, "linear");
+        canvas.arrayAnimate("graph", 1, 3, 2000, "easeOut", function() {
+          canvas.arrayAnimate("graph", 1, 0.5, 1000, "easeIn");
+        });
+        canvas.arrayAnimate("graph", 2, 10, 1000, "easeIn", function() {
+          canvas.arrayAnimate("graph", 2, -10, 1000, "easeInOut", function() {
+            canvas.arrayAnimate("graph", 2, 0, 1000, "easeOut");
+          });
+        });
+        canvas.animate("graph", {
+          lineWidth: 5
+        }, 3000, "linear");
         canvas.rectangle("box", {
           height: 50,
           width: 50,
@@ -60,44 +88,42 @@
           y: 20,
           fillColor: hex("ff0000")
         });
-        canvas.autoDraw(30); // doesn't use setInterval, rather a recursive setTimeout
+        canvas.autoDraw(); // doesn't use setInterval, rather a recursive setTimeout
         canvas.animate("ball", {
           radius: 50
         }, 1250, "elasticOut");
         canvas.animate("ball", {
           strokeWidth: 1
-        }, 1000, "easeOut");
-        setTimeout(function() {
+        }, 1000, "easeOut", function() {
           canvas.animate("box", {
             x: 200,
             y: 300,
             fillColor: rgba(127, 255, 255, 1),
             strokeColor: rgba(255, 0, 0, 1)
           }, 1250, "bounceOut");
-        }, 1000);
-        setTimeout(function() {
-          canvas.animate("path", {
-            x: 200,
-            fillColor: hex("ff8800")
-          }, 1000, "backInOut");
-          canvas.pathAnimate("path", 0, 10, 1000, "backIn");
-          canvas.pathAnimate("path", 1, 200, 1000, "backInOut");
-          canvas.pathAnimate("path", 3, 10, 1000, "backInOut");
-          canvas.pathAnimate("path", 4, 30, 1000, "easeOut");
           setTimeout(function() {
             canvas.animate("path", {
-              fillColor: rgba(255, 127, 0, 0)
-            }, 1000, "bounceOut");
-            setTimeout(function() {
-              canvas.animate("ball", {
-                y: 305
+              x: 200,
+              fillColor: hex("ff8800")
+            }, 1000, "backInOut");
+            canvas.circle("ball", {
+              fillColor: rgba(255,0,0,0.2)
+            });
+            canvas.arrayAnimate("path", 0, 10, 1000, "backIn");
+            canvas.arrayAnimate("path", 1, 200, 1000, "backInOut");
+            canvas.arrayAnimate("path", 3, 10, 1000, "backInOut");
+            canvas.arrayAnimate("path", 4, 30, 1000, "easeOut", function() {
+              canvas.animate("path", {
+                fillColor: rgba(255, 127, 0, 0)
               }, 1000, "bounceOut");
-            }, 1000);
-          }, 1000);
-          canvas.circle("ball", {
-            fillColor: rgba(255,0,0,0.2)
-          });
-        }, 2500);
+              setTimeout(function() {
+                canvas.animate("ball", {
+                  y: 305
+                }, 1000, "bounceOut");
+              }, 1000);
+            });
+          }, 1500);
+        });
       }
     </script>
   </body>

@@ -205,6 +205,9 @@
         }
       }
     };
+    Canvas.prototype.get = function(shape) {
+      return this.registry[shape];
+    };
     Canvas.prototype.rectangle = function(id, options) {
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
@@ -267,8 +270,34 @@
       options = _opts;
       return this.registry[id] = options;
     };
+    Canvas.prototype.plot = function(id, options) {
+      var $default, defaults, _opts;
+      defaults = !(this.registry[id] != null) ? {
+        type: "plot",
+        x: 0,
+        y: 0,
+        xMax: 0,
+        yMax: 0,
+        xMin: 0,
+        yMin: 0,
+        xScale: 1,
+        yScale: 1,
+        equation: function(x, params) {
+          return x;
+        },
+        params: [],
+        lineColor: rgba(0, 0, 0, 0),
+        lineWidth: 0
+      } : this.registry[id];
+      _opts = {};
+      for ($default in defaults) {
+        _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
+      }
+      options = _opts;
+      return this.registry[id] = options;
+    };
     Canvas.prototype.draw = function() {
-      var id, shape, _ref, _results;
+      var id, incrementXPerPixel, incrementYPerPixel, pixelsPerXUnit, pixelsPerYUnit, result, shape, x, xEnd, xPix, xStart, yClipBottom, yClipTop, yPix, _ref, _results;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       _ref = this.registry;
       _results = [];
@@ -310,6 +339,31 @@
               this.ctx.fill();
               this.ctx.stroke();
               return this.ctx.closePath();
+            case "plot":
+              this.ctx.beginPath();
+              this.ctx.strokeStyle = shape.lineColor;
+              this.ctx.lineWidth = shape.lineWidth;
+              pixelsPerXUnit = shape.xScale;
+              incrementXPerPixel = 1 / pixelsPerXUnit;
+              pixelsPerYUnit = shape.yScale;
+              incrementYPerPixel = 1 / pixelsPerYUnit;
+              xStart = shape.x + pixelsPerXUnit * shape.xMin;
+              xEnd = shape.x + pixelsPerXUnit * shape.xMax;
+              yClipTop = shape.y - pixelsPerYUnit * shape.yMax;
+              yClipBottom = shape.y - pixelsPerYUnit * shape.yMin;
+              this.ctx.moveTo(xStart, shape.y - (shape.equation(x, shape.params)) * pixelsPerYUnit);
+              for (xPix = xStart; (xStart <= xEnd ? xPix < xEnd : xPix > xEnd); (xStart <= xEnd ? xPix += 1 : xPix -= 1)) {
+                x = shape.xMin + (xPix - xStart) / pixelsPerXUnit;
+                result = shape.equation(x, shape.params);
+                yPix = shape.y - result * pixelsPerYUnit;
+                if ((yClipTop < yPix && yPix < yClipBottom)) {
+                  this.ctx.lineTo(xPix, yPix);
+                } else if (yPix < yClipTop) {
+                  this.ctx.moveTo(xPix * ((yClipTop - yPix) / -yPix), yClipTop);
+                }
+              }
+              this.ctx.stroke();
+              return this.ctx.closePath();
           }
         }).call(this));
       }
@@ -336,7 +390,7 @@
     Canvas.prototype.stopDrawing = function() {
       return this.autoDraw.state = false;
     };
-    Canvas.prototype.animate = function(shape, destination, duration, easing, fps) {
+    Canvas.prototype.animate = function(shape, destination, duration, easing, callback, fps) {
       var channel, oldDest, orig, prop, rec, timePassed, _i, _j, _len, _len2, _ref, _ref2;
       if (fps == null) {
         fps = 30;
@@ -396,9 +450,10 @@
           }, 1000 / fps);
         }
       };
-      return rec.call(this);
+      rec.call(this);
+      return setTimeout(callback, duration);
     };
-    Canvas.prototype.pathAnimate = function(shape, index, destination, duration, easing, fps) {
+    Canvas.prototype.arrayAnimate = function(shape, index, destination, duration, easing, callback, fps) {
       var orig, rec, timePassed;
       if (fps == null) {
         fps = 30;
@@ -417,13 +472,26 @@
           }, 1000 / fps);
         }
       };
-      return rec.call(this);
+      rec.call(this);
+      return setTimeout(callback, duration);
     };
     Canvas.prototype.moveToBack = function(shape) {
       var _shape;
       _shape = this.registry[shape];
       delete this.registry[shape];
-      return this.registry[shape] = _shape;
+      this.registry[shape] = _shape;
+      return {
+        bounceInOut: function(t, b, c, d) {
+          if (t < d / 2) {
+            return Canvas.prototype.easing.bounceIn(t * 2, 0, c, d) * .5 + b;
+          } else {
+            return Canvas.prototype.easing.bounceOut(t * 2 - d, 0, c, d) * .5 + c * .5 + b;
+          }
+        }
+      };
+    };
+    Canvas.prototype.get = function(shape) {
+      return this.registry[shape];
     };
     return Canvas;
   })();
