@@ -6,7 +6,8 @@
     Copyright 2011 Adrian Sinclair (adrusi)
 
     Easing functions modified from http://developer.yahoo.com/yui/docs/Easing.js.html BSD license
-  */  this.rgba = function(r, g, b, a) {
+  */  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  this.rgba = function(r, g, b, a) {
     return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
   };
   this.rgb = function(r, g, b) {
@@ -60,6 +61,45 @@
         this.canvas.height = (args[2] != null) && typeof args[2] === "number" ? args[2] : args[1];
       }
       this.ctx = this.canvas.getContext("2d");
+      this.ctx.cursor = {
+        x: 0,
+        y: 0
+      };
+      this.ctx.relLineTo = __bind(function(x, y) {
+        this.ctx.lineTo(x + this.ctx.cursor.x, y + this.ctx.cursor.y);
+        return this.ctx.cursor = {
+          x: this.ctx.cursor.x + x,
+          y: this.ctx.cursor.y + y
+        };
+      }, this);
+      this.ctx.relMoveTo = __bind(function(x, y) {
+        this.ctx.moveTo(x + this.ctx.cursor.x, y + this.ctx.cursor.y);
+        return this.ctx.cursor = {
+          x: this.ctx.cursor.x + x,
+          y: this.ctx.cursor.y + y
+        };
+      }, this);
+      this.ctx.relArc = __bind(function(x, y, radius, startAngle, endAngle, anticlockwise) {
+        this.ctx.arc(x + this.ctx.cursor.x, y + this.ctx.cursor.y, radius, startAngle, endAngle, anticlockwise);
+        return this.ctx.cursor = {
+          x: this.ctx.cursor.x + x,
+          y: this.ctx.cursor.y + y
+        };
+      }, this);
+      this.ctx.relQuadraticCurveTo = __bind(function(cp1x, cp1y, x, y) {
+        this.ctx.quadraticCurveTo(cp1x + this.ctx.cursor.x, cp1y + this.ctx.cursor.y, x + this.ctx.cursor.x, y + this.ctx.cursor.y);
+        return this.ctx.cursor = {
+          x: this.ctx.cursor.x + x,
+          y: this.ctx.cursor.y + y
+        };
+      }, this);
+      this.ctx.relBezierCurveTo = __bind(function(cp1x, cp1y, cp2x, cp2y, x, y) {
+        this.ctx.bezierCurveTo(cp1x + this.ctx.cursor.x, cp1y + this.ctx.cursor.y, cp2x + this.ctx.cursor.x, cp2y + this.ctx.cursor.y, x + this.ctx.cursor.x, y + this.ctx.cursor.y);
+        return this.ctx.cursor = {
+          x: this.ctx.cursor.x + x,
+          y: this.ctx.cursor.y + y
+        };
+      }, this);
       this.autoDraw.state = true;
     }
     Canvas.prototype.registry = {};
@@ -357,6 +397,10 @@
               this.ctx.lineWidth = shape.strokeWidth;
               this.ctx.lineCap = shape.strokeCap;
               this.ctx.lineJoin = shape.strokeJoin;
+              this.ctx.cursor = {
+                x: shape.x,
+                y: shape.y
+              };
               this.ctx.moveTo(shape.x, shape.y);
               if (shape.params.constructor.name === "Array") {
                 shape.path.apply(this.ctx, shape.params);

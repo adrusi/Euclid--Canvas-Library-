@@ -89,11 +89,11 @@
         //   fillColor: hex("ff0000")
         // });
         canvas.path("path", {
-          path: function(params) {
-            this.lineTo(params.x + 10 + params.skew * params.scale, params.y);
-            this.lineTo(params.x + params.bottom * params.scale, params.y + 5 * params.scale);
-            this.lineTo(params.x, params.y + params.bottom * params.scale);
-            this.lineTo(params.x + params.skew, params.y);
+          path: function(_) {
+            this.lineTo(_.x + 10 + _.skew * _.scale, _.y);
+            this.lineTo(_.x + _.bottom * _.scale, _.y + 5 * _.scale);
+            this.lineTo(_.x, _.y + _.bottom * _.scale);
+            this.lineTo(_.x + _.skew, _.y);
           },
           params: {
             scale: 5,
@@ -105,6 +105,17 @@
           x: 20,
           y: 20,
           fillColor: hex("ff0000")
+        });
+        canvas.path("rel", {
+          path: function() {
+            this.relLineTo(100, 0);
+            this.relLineTo(0, 100);
+            this.relQuadraticCurveTo(-200, 100, -100, -100);
+          },
+          params: [],
+          x: 200,
+          y: 200,
+          fillColor: rgba(100,100,200,0.4)
         });
         canvas.autoDraw(); // doesn't use setInterval, rather a recursive setTimeout
         canvas.animate("ball", {

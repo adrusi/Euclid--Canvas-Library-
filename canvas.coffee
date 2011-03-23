@@ -62,6 +62,25 @@ class @Canvas
       @canvas.height = if args[2]? and typeof args[2] is "number" then args[2] else args[1]
 
     @ctx = @canvas.getContext "2d"
+    ##== add relative drawing to canvas for use in paths
+    @ctx.cursor = { x: 0, y: 0 }
+    @ctx.relLineTo = (x, y) =>
+      @ctx.lineTo x + @ctx.cursor.x, y + @ctx.cursor.y
+      @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    @ctx.relMoveTo = (x, y) =>
+      @ctx.moveTo x + @ctx.cursor.x, y + @ctx.cursor.y
+      @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    @ctx.relArc = (x, y, radius, startAngle, endAngle, anticlockwise) =>
+      @ctx.arc x + @ctx.cursor.x, y + @ctx.cursor.y, radius, startAngle, endAngle, anticlockwise
+      @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    @ctx.relQuadraticCurveTo = (cp1x, cp1y, x, y) =>
+      @ctx.quadraticCurveTo cp1x + @ctx.cursor.x, cp1y + @ctx.cursor.y, x + @ctx.cursor.x, y + @ctx.cursor.y
+      @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    @ctx.relBezierCurveTo = (cp1x, cp1y, cp2x, cp2y, x, y) =>
+      @ctx.bezierCurveTo cp1x + @ctx.cursor.x, cp1y + @ctx.cursor.y, cp2x + @ctx.cursor.x, cp2y + @ctx.cursor.y,
+        x + @ctx.cursor.x, y + @ctx.cursor.y
+      @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    ##== END
     @autoDraw.state = on
 
   registry: {}
@@ -336,6 +355,7 @@ class @Canvas
           @ctx.lineWidth = shape.strokeWidth
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
+          @ctx.cursor = { x: shape.x, y: shape.y }
           @ctx.moveTo shape.x, shape.y
           if shape.params.constructor.name is "Array"
             shape.path.apply @ctx, shape.params
