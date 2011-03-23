@@ -296,6 +296,29 @@
       options = _opts;
       return this.registry[id] = options;
     };
+    Canvas.prototype.arc = function(id, options) {
+      var $default, defaults, _opts;
+      defaults = !(this.registry[id] != null) ? {
+        type: "arc",
+        x: 0,
+        y: 0,
+        radius: 0,
+        start: 0,
+        arcLength: 0,
+        closed: false,
+        fillColor: rgba(0, 0, 0, 0),
+        strokeColor: rgba(0, 0, 0, 0),
+        strokeWidth: 0,
+        strokeCap: "butt",
+        strokeJoin: "miter"
+      } : this.registry[id];
+      _opts = {};
+      for ($default in defaults) {
+        _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
+      }
+      options = _opts;
+      return this.registry[id] = options;
+    };
     Canvas.prototype.draw = function() {
       var id, incrementXPerPixel, incrementYPerPixel, pixelsPerXUnit, pixelsPerYUnit, result, shape, x, xEnd, xPix, xStart, yClipBottom, yClipTop, yPix, _ref, _results;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -335,7 +358,11 @@
               this.ctx.lineCap = shape.strokeCap;
               this.ctx.lineJoin = shape.strokeJoin;
               this.ctx.moveTo(shape.x, shape.y);
-              shape.path.apply(this.ctx, shape.params);
+              if (shape.params.constructor.name === "Array") {
+                shape.path.apply(this.ctx, shape.params);
+              } else if (shape.params.constructor.name === "Object") {
+                shape.path.call(this.ctx, shape.params);
+              }
               this.ctx.fill();
               this.ctx.stroke();
               return this.ctx.closePath();
@@ -362,6 +389,17 @@
                   this.ctx.moveTo(xPix * ((yClipTop - yPix) / -yPix), yClipTop);
                 }
               }
+              this.ctx.stroke();
+              return this.ctx.closePath();
+            case "arc":
+              this.ctx.beginPath();
+              this.ctx.fillStyle = shape.fillColor;
+              this.ctx.strokeStyle = shape.strokeColor;
+              this.ctx.lineWidth = shape.strokeWidth;
+              this.ctx.lineCap = shape.strokeCap;
+              this.ctx.lineJoin = shape.strokeJoin;
+              this.ctx.arc(shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false);
+              this.ctx.fill();
               this.ctx.stroke();
               return this.ctx.closePath();
           }
@@ -422,7 +460,7 @@
       }
       timePassed = 0;
       rec = function() {
-        var alpha, blue, final, green, i, prop, red, th, v, _len, _ref;
+        var alpha, blue, final, green, i, key, prop, red, th, v, value, _len, _ref, _ref2;
         if (!(timePassed >= duration)) {
           th = this;
           for (prop in orig) {
@@ -432,11 +470,19 @@
               blue = easing(timePassed, orig[prop].rgba[2], destination[prop].rgba[2] - orig[prop].rgba[2], duration);
               alpha = easing(timePassed, orig[prop].rgba[3], destination[prop].rgba[3] - orig[prop].rgba[3], duration);
               this.registry[shape][prop] = rgba(Math.round(red), Math.round(green), Math.round(blue), alpha);
+            } else if (orig[prop].constructor.name === "Object") {
+              final = {};
+              _ref = orig[prop];
+              for (key in _ref) {
+                value = _ref[key];
+                final[key] = easing(timePassed, orig[prop][key], destination[prop][key] - orig[prop][key], duration);
+              }
+              this.registry[shape][prop] = final;
             } else if (orig[prop].constructor.name === "Array") {
               final = [];
-              _ref = orig[prop];
-              for (i = 0, _len = _ref.length; i < _len; i++) {
-                v = _ref[i];
+              _ref2 = orig[prop];
+              for (i = 0, _len = _ref2.length; i < _len; i++) {
+                v = _ref2[i];
                 final.push(easing(timePassed, orig[prop][i], destination[prop][i] - orig[prop][i], duration));
               }
               this.registry[shape][prop] = final;
@@ -466,6 +512,28 @@
         if (!(timePassed >= duration)) {
           th = this;
           this.registry[shape].params[index] = easing(timePassed, orig, destination - orig, duration);
+          return setTimeout(function() {
+            rec.call(th);
+            return timePassed += 1000 / fps;
+          }, 1000 / fps);
+        }
+      };
+      rec.call(this);
+      return setTimeout(callback, duration);
+    };
+    Canvas.prototype.objAnimate = function(shape, property, destination, duration, easing, callback, fps) {
+      var orig, rec, timePassed;
+      if (fps == null) {
+        fps = 30;
+      }
+      orig = this.registry[shape].params[property];
+      easing = (easing != null) && typeof easing !== "string" ? easing : (easing != null) && typeof easing === "string" ? this.easing[easing] : void 0;
+      timePassed = 0;
+      rec = function() {
+        var th;
+        if (!(timePassed >= duration)) {
+          th = this;
+          this.registry[shape].params[property] = easing(timePassed, orig, destination - orig, duration);
           return setTimeout(function() {
             rec.call(th);
             return timePassed += 1000 / fps;

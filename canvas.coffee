@@ -278,6 +278,30 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    
+  arc: (id, options) ->
+    defaults = if not @registry[id]?
+      {
+        type: "arc"
+        x: 0
+        y: 0
+        radius: 0
+        start: 0
+        arcLength: 0
+        closed: no
+        fillColor: rgba(0,0,0,0)
+        strokeColor: rgba(0,0,0,0)
+        strokeWidth: 0
+        strokeCap: "butt"
+        strokeJoin: "miter"
+      }
+    else
+      @registry[id]
+    _opts = {}
+    for $default of defaults
+      _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
+    options = _opts
+    @registry[id] = options
 
   draw: ->
     @ctx.clearRect 0, 0, @canvas.width, @canvas.height
@@ -313,7 +337,10 @@ class @Canvas
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
           @ctx.moveTo shape.x, shape.y
-          shape.path.apply @ctx, shape.params
+          if shape.params.constructor.name is "Array"
+            shape.path.apply @ctx, shape.params
+          else if shape.params.constructor.name is "Object"
+            shape.path.call @ctx, shape.params
           @ctx.fill()
           @ctx.stroke()
           @ctx.closePath()
@@ -343,7 +370,17 @@ class @Canvas
               @ctx.moveTo xPix * ((yClipTop - yPix) / -yPix), yClipTop
           @ctx.stroke()
           @ctx.closePath()
-              
+        when "arc"
+          @ctx.beginPath()
+          @ctx.fillStyle = shape.fillColor
+          @ctx.strokeStyle = shape.strokeColor
+          @ctx.lineWidth = shape.strokeWidth
+          @ctx.lineCap = shape.strokeCap
+          @ctx.lineJoin = shape.strokeJoin
+          @ctx.arc shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false
+          @ctx.fill()
+          @ctx.stroke()
+          @ctx.closePath()
               
           
   autoDraw: (fps = 30) ->
@@ -390,6 +427,11 @@ class @Canvas
             blue = easing timePassed, orig[prop].rgba[2], destination[prop].rgba[2] - orig[prop].rgba[2], duration
             alpha = easing timePassed, orig[prop].rgba[3], destination[prop].rgba[3] - orig[prop].rgba[3], duration
             @registry[shape][prop] = rgba(Math.round(red), Math.round(green), Math.round(blue), alpha)
+          else if orig[prop].constructor.name is "Object"
+            final = {}
+            for key, value of orig[prop]
+              final[key] = easing timePassed, orig[prop][key], destination[prop][key] - orig[prop][key], duration
+            @registry[shape][prop] = final
           else if orig[prop].constructor.name is "Array"
             final = []
             for v, i in orig[prop]
@@ -422,6 +464,24 @@ class @Canvas
     rec.call @
     setTimeout callback, duration
   
+  objAnimate: (shape, property, destination, duration, easing, callback, fps = 30) ->
+    orig = @registry[shape].params[property]
+    easing = if easing? and typeof easing isnt "string"
+      easing
+    else if easing? and typeof easing is "string"
+      @easing[easing]
+    timePassed = 0
+    rec = ->
+      unless timePassed >= duration
+        th = @
+        @registry[shape].params[property] = easing timePassed, orig, destination - orig, duration
+        setTimeout ->
+          rec.call th
+          timePassed += 1000 / fps
+        , 1000 / fps
+    rec.call @
+    setTimeout callback, duration
+  
   moveToBack: (shape) ->
     _shape = @registry[shape]
     delete @registry[shape]
@@ -434,186 +494,3 @@ class @Canvas
   
   get: (shape) ->
     @registry[shape]
-  
-  # rectangle: (id, options) ->
-  #   defaults = if not @registry[id]?
-  #     {
-  #       type: "rectangle"
-  #       x: 0
-  #       y: 0
-  #       width: 0
-  #       height: 0
-  #       fillColor: rgba(0,0,0,0)
-  #       strokeColor: rgba(0,0,0,0)
-  #       strokeWidth: 0
-  #       strokeCap: "butt"
-  #       strokeJoin: "miter"
-  #     }
-  #   else
-  #     @registry[id]
-  #   _opts = {}
-  #   for $default of defaults
-  #     _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
-  #   options = _opts
-  #   @registry[id] = options
-  # 
-  # circle: (id, options) ->
-  #   defaults = if not @registry[id]?
-  #     {
-  #       type: "circle"
-  #       x: 0
-  #       y: 0
-  #       radius: 0
-  #       fillColor: rgba(0,0,0,0)
-  #       strokeColor: rgba(0,0,0,0)
-  #       strokeWidth: 0
-  #       strokeCap: "butt"
-  #       strokeJoin: "miter"
-  #     }
-  #   else
-  #     @registry[id]
-  #   _opts = {}
-  #   for $default of defaults
-  #     _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
-  #   options = _opts
-  #   @registry[id] = options
-  # 
-  # path: (id, options) ->
-  #   defaults = if not @registry[id]?
-  #     {
-  #       type: "path"
-  #       x: 0
-  #       y: 0
-  #       path: ->
-  #       params: []
-  #       fillColor: rgba(0,0,0,0)
-  #       strokeColor: rgba(0,0,0,0)
-  #       strokeWidth: 0
-  #       strokeCap: "butt"
-  #       strokeJoin: "miter"
-  #     }
-  #   else
-  #     @registry[id]
-  #   _opts = {}
-  #   for $default of defaults
-  #     _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
-  #   options = _opts
-  #   @registry[id] = options
-  # 
-  # draw: ->
-  #   @ctx.clearRect 0, 0, @canvas.width, @canvas.height
-  #   for id, shape of @registry
-  #     switch shape.type
-  #       when "rectangle"
-  #         @ctx.beginPath()
-  #         @ctx.fillStyle = shape.fillColor
-  #         @ctx.strokeStyle = shape.strokeColor
-  #         @ctx.lineWidth = shape.strokeWidth
-  #         @ctx.lineCap = shape.strokeCap
-  #         @ctx.lineJoin = shape.strokeJoin
-  #         @ctx.rect shape.x, shape.y, shape.width, shape.height
-  #         @ctx.closePath()
-  #         @ctx.fill()
-  #         @ctx.stroke()
-  #       when "circle"
-  #         @ctx.beginPath()
-  #         @ctx.fillStyle = shape.fillColor
-  #         @ctx.strokeStyle = shape.strokeColor
-  #         @ctx.lineWidth = shape.strokeWidth
-  #         @ctx.lineCap = shape.strokeCap
-  #         @ctx.lineJoin = shape.strokeJoin
-  #         @ctx.arc shape.x, shape.y, shape.radius, 0, 2 * Math.PI, true
-  #         @ctx.closePath()
-  #         @ctx.fill()
-  #         @ctx.stroke()
-  #       when "path"
-  #         @ctx.beginPath()
-  #         @ctx.fillStyle = shape.fillColor
-  #         @ctx.strokeStyle = shape.strokeColor
-  #         @ctx.lineWidth = shape.strokeWidth
-  #         @ctx.lineCap = shape.strokeCap
-  #         @ctx.lineJoin = shape.strokeJoin
-  #         @ctx.moveTo shape.x, shape.y
-  #         shape.path.apply @ctx, shape.params
-  #         @ctx.fill()
-  #         @ctx.stroke()
-  #         @ctx.closePath()
-  # 
-  # autoDraw: (fps = 30) ->
-  #   @autoDraw.state = on
-  #   rec = (previous) ->
-  #     if @autoDraw.state is on
-  #       th = @
-  #       @draw()
-  #       setTimeout ->
-  #         rec.call th
-  #       , 1000 / fps
-  #   rec.call @
-  # 
-  # stopDrawing: ->
-  #   @autoDraw.state = off
-  # 
-  # animate: (shape, destination, duration, easing, fps = 30) ->
-  #   orig = {}
-  #   
-  #   easing = if easing? and typeof easing isnt "string"
-  #     easing
-  #   else if easing? and typeof easing is "string"
-  #     @easing[easing]
-  #     
-  #   for prop of destination
-  #     if typeof @registry[shape][prop] is "string" and /^rgba\((?:\d|\d+)\, (?:\d|\d+)\, (?:\d|\d+)\, (?:\d|[\d\.]+)\)$/.exec @registry[shape][prop]
-  #       orig[prop] = {rgba: []}
-  #       oldDest = destination[prop]
-  #       destination[prop] = {rgba: []}
-  #       for channel in @registry[shape][prop].replace("rgba(", "").replace(")", "").split /\, ?/
-  #         orig[prop].rgba.push parseFloat channel
-  #       for channel in oldDest.replace("rgba(", "").replace(")", "").split /\, ?/
-  #         destination[prop].rgba.push parseFloat channel
-  #     else
-  #       orig[prop] = @registry[shape][prop]
-  #   timePassed = 0
-  #   rec = ->
-  #     unless timePassed >= duration
-  #       th = @
-  #       for prop of orig
-  #         if orig[prop].constructor.name is "Object" and orig[prop].rgba?
-  #           red = easing timePassed, orig[prop].rgba[0], destination[prop].rgba[0] - orig[prop].rgba[0], duration
-  #           green = easing timePassed, orig[prop].rgba[1], destination[prop].rgba[1] - orig[prop].rgba[1], duration
-  #           blue = easing timePassed, orig[prop].rgba[2], destination[prop].rgba[2] - orig[prop].rgba[2], duration
-  #           alpha = easing timePassed, orig[prop].rgba[3], destination[prop].rgba[3] - orig[prop].rgba[3], duration
-  #           @registry[shape][prop] = rgba(Math.round(red), Math.round(green), Math.round(blue), alpha)
-  #         else if orig[prop].constructor.name is "Array"
-  #           final = []
-  #           for v, i in orig[prop]
-  #             final.push easing timePassed, orig[prop][i], destination[prop][i] - orig[prop][i], duration
-  #           @registry[shape][prop] = final
-  #         else
-  #           @registry[shape][prop] = easing timePassed, orig[prop], destination[prop] - orig[prop], duration
-  #       setTimeout ->
-  #         rec.call th
-  #         timePassed += 1000 / fps
-  #       , 1000 / fps
-  #   rec.call @
-  #   
-  # pathAnimate: (shape, index, destination, duration, easing, fps = 30) ->
-  #   orig = @registry[shape].params[index]
-  #   easing = if easing? and typeof easing isnt "string"
-  #     easing
-  #   else if easing? and typeof easing is "string"
-  #     @easing[easing]
-  #   timePassed = 0
-  #   rec = ->
-  #     unless timePassed >= duration
-  #       th = @
-  #       @registry[shape].params[index] = easing timePassed, orig, destination - orig, duration
-  #       setTimeout ->
-  #         rec.call th
-  #         timePassed += 1000 / fps
-  #       , 1000 / fps
-  #   rec.call @
-  # 
-  # moveToBack: (shape) ->
-  #   _shape = @registry[shape]
-  #   delete @registry[shape]
-  #   @registry[shape] = _shape

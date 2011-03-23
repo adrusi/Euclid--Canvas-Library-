@@ -47,18 +47,18 @@
           },
           params: [1, 1, 0]
         });
-        canvas.arrayAnimate("graph", 0, 5, 3000, "linear");
+        canvas.arrayAnimate("graph", 0, 5, 3000, "easeInOut");
         canvas.arrayAnimate("graph", 1, 3, 2000, "easeOut", function() {
           canvas.arrayAnimate("graph", 1, 0.5, 1000, "easeIn");
         });
-        canvas.arrayAnimate("graph", 2, 10, 1000, "easeIn", function() {
+        canvas.arrayAnimate("graph", 2, 10, 1000, "easeOut", function() {
           canvas.arrayAnimate("graph", 2, -10, 1000, "easeInOut", function() {
-            canvas.arrayAnimate("graph", 2, 0, 1000, "easeOut");
+            canvas.arrayAnimate("graph", 2, 0, 1000, "easeIn");
           });
         });
         canvas.animate("graph", {
           lineWidth: 5
-        }, 3000, "linear");
+        }, 2500, "linear");
         canvas.rectangle("box", {
           height: 50,
           width: 50,
@@ -76,14 +76,32 @@
           strokeColor: hex("000000"),
           strokeWidth: 5
         });
+        // canvas.path("path", {
+        //   path: function(scale, x, y, bottom, skew) {
+        //     this.lineTo(x + 10 + skew * scale, y);
+        //     this.lineTo(x + bottom * scale, y + 5 * scale);
+        //     this.lineTo(x, y + bottom * scale);
+        //     this.lineTo(x + skew, y);
+        //   },
+        //   params: [5, 20, 20, 5, 0],
+        //   x: 20,
+        //   y: 20,
+        //   fillColor: hex("ff0000")
+        // });
         canvas.path("path", {
-          path: function(scale, x, y, bottom, skew) {
-            this.lineTo(x + 10 + skew * scale, y);
-            this.lineTo(x + bottom * scale, y + 5 * scale);
-            this.lineTo(x, y + bottom * scale);
-            this.lineTo(x + skew, y);
+          path: function(params) {
+            this.lineTo(params.x + 10 + params.skew * params.scale, params.y);
+            this.lineTo(params.x + params.bottom * params.scale, params.y + 5 * params.scale);
+            this.lineTo(params.x, params.y + params.bottom * params.scale);
+            this.lineTo(params.x + params.skew, params.y);
           },
-          params: [5, 20, 20, 5, 0],
+          params: {
+            scale: 5,
+            x: 20,
+            y: 20,
+            bottom: 5,
+            skew: 0
+          },
           x: 20,
           y: 20,
           fillColor: hex("ff0000")
@@ -109,13 +127,21 @@
             canvas.circle("ball", {
               fillColor: rgba(255,0,0,0.2)
             });
-            canvas.arrayAnimate("path", 0, 10, 1000, "backIn");
-            canvas.arrayAnimate("path", 1, 200, 1000, "backInOut");
-            canvas.arrayAnimate("path", 3, 10, 1000, "backInOut");
-            canvas.arrayAnimate("path", 4, 30, 1000, "easeOut", function() {
+            // canvas.arrayAnimate("path", 0, 10, 1000, "backIn");
+            // canvas.arrayAnimate("path", 1, 200, 1000, "backInOut");
+            // canvas.arrayAnimate("path", 3, 10, 1000, "backInOut");
+            // canvas.arrayAnimate("path", 4, 30, 1000, "easeOut", function() {
+            canvas.objAnimate("path", "scale", 10, 1000, "backIn");
+            canvas.objAnimate("path", "x", 200, 1000, "backInOut");
+            canvas.objAnimate("path", "bottom", 10, 1000, "backInOut");
+            canvas.objAnimate("path", "skew", 30, 1000, "easeOut", function() {
               canvas.animate("path", {
                 fillColor: rgba(255, 127, 0, 0)
-              }, 1000, "bounceOut");
+              }, 1000, "bounceOut", function() {
+                canvas.animate("path", {
+                  fillColor: rgba(255, 127, 0, 1)
+                }, 1000, "bounceIn");
+              });
               setTimeout(function() {
                 canvas.animate("ball", {
                   y: 305

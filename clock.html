@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Euclid Clock</title>
+    <link rel="stylesheet" href="https://github.com/adrusi/CSS-Reset/raw/master/reset.css" />
+    <style>
+      body {
+        background: #333333;
+      }
+      #clock {
+        position: absolute;
+        height: 340px;
+        width: 340px;
+        top: 50%;
+        left: 50%;
+        margin-top: -170px;
+        margin-left: -170px;
+        -webkit-user-select: none;
+      }
+      #clock * {
+        position: absolute;
+      }
+      #clock div {
+        left: 50%;
+        z-index: 1;
+        height: 30px;
+        line-height: 30px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-weight: 100;
+        text-indent: 3px;
+        color: rgba(255,255,255,0.6);
+        font-size: 12px;
+      }
+      #minute { top: 35px; }
+      #hour { top: 70px; }
+      #day { top: 105px; }
+      #month { top: 140px; }
+      footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 15px;
+        background: rgba(255,255,255,0.1);
+        border-top: 1px solid rgba(255,255,255,0.2);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-weight: 200;
+        text-align: center;
+      }
+      a, a:visited {
+        color: #222222;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="clock">
+      <div id="second"></div>
+      <div id="minute"></div>
+      <div id="hour"></div>
+      <div id="day"></div>
+      <div id="month"></div>
+    </div>
+    <footer>
+      Polar clock demo for <a href="https://github.com/adrusi/Euclid--Canvas-Library-">Euclid Canvas Library</a> by <a href="//adrusi.com">Adrusi</a>. Design inspired by <a href="http://raphaeljs.com/polar-clock.html">Raphael polar clock</a>. 
+    </footer>
+    <script src="canvas.js"></script>
+    <script>
+      window.addEventListener("load", function() {
+        var canvas = new Canvas("clock", 340, 340),
+            date = new Date(),
+            month = date.getMonth(),
+            day = date.getDate(),
+            hour = date.getHours(),
+            minute = date.getMinutes(),
+            second = date.getSeconds(),
+            daysInMonth = (month === 1) ? 28 :
+                            (month === 3 || month === 5 || month === 8 || month === 10) ? 30 :
+                              31,
+            refreshTime = function() {
+              second++;
+              if (second === 60) {
+                second = 0;
+                minute++;
+                if (minute === 60) {
+                  minute = 0;
+                  hour++;
+                  if (hour === 24) {
+                    hour = 0;
+                    day++;
+                    if (day === 31) day = 0;
+                    if (day === 0) {
+                      day = 0;
+                      month++;
+                      if (month === 12) month = 0;
+                      setTimeout(function() {
+                        mth.innerHTML = month + 1;
+                      }, 100);
+                      canvas.animate("month", {
+                        arcLength: (3/2 * Math.PI) + month * (Math.PI / 6)
+                      }, 750, (month !== 0) ? "elasticOut" : "easeInOut");
+                    }
+                    setTimeout(function() {
+                      d.innerHTML = day;
+                    }, 100);
+                    canvas.animate("day", {
+                      arcLength: (3/2 * Math.PI) + day * 2 * (Math.PI / daysInMonth)
+                    }, 750, (day !== 0) ? "elasticOut" : "easeInOut");
+                  }
+                  setTimeout(function() {
+                    hr.innerHTML = hour;
+                  }, 100);
+                  canvas.animate("hour", {
+                    arcLength: (3/2 * Math.PI) + hour * (Math.PI / 12)
+                  }, 750, (hour !== 0) ? "elasticOut" : "easeInOut");
+                }
+                setTimeout(function() {
+                  min.innerHTML = minute;
+                }, 100);
+                canvas.animate("minute", {
+                  arcLength: (3/2 * Math.PI) + minute * (Math.PI / 30)
+                }, 750, (minute !== 0) ? "elasticOut" : "easeInOut");
+              }
+              setTimeout(function() {
+                sec.innerHTML = second;
+              }, 100);
+              canvas.animate("second", {
+                arcLength: (3/2 * Math.PI) + second * (Math.PI / 30)
+              }, 750, (second !== 0) ? "elasticOut" : "easeInOut");
+              setTimeout(refreshTime, 1000);
+            },
+            sec = document.getElementById("second"),
+            min = document.getElementById("minute"),
+            hr = document.getElementById("hour"),
+            d = document.getElementById("day"),
+            mth = document.getElementById("month");
+        sec.innerHTML = second;
+        min.innerHTML = minute;
+        hr.innerHTML = hour;
+        d.innerHTML = day;
+        mth.innerHTML = month + 1;
+        canvas.circle("sec", {
+          x: 170,
+          y: 170,
+          radius: 155,
+          strokeWidth: 1,
+          strokeColor: rgba(255,255,255,0.1)
+        });
+        canvas.circle("min", {
+          x: 170,
+          y: 170,
+          radius: 120,
+          strokeWidth: 1,
+          strokeColor: rgba(255,255,255,0.1)
+        });
+        canvas.circle("hr", {
+          x: 170,
+          y: 170,
+          radius: 85,
+          strokeWidth: 1,
+          strokeColor: rgba(255,255,255,0.1)
+        });
+        canvas.circle("d", {
+          x: 170,
+          y: 170,
+          radius: 50,
+          strokeWidth: 1,
+          strokeColor: rgba(255,255,255,0.1)
+        });
+        canvas.circle("mth", {
+          x: 170,
+          y: 170,
+          radius: 15,
+          strokeWidth: 1,
+          strokeColor: rgba(255,255,255,0.1)
+        });
+        canvas.arc("second", {
+          x: 170,
+          y: 170,
+          radius: 155,
+          start: 3/2 * Math.PI,
+          arcLength: (3/2 * Math.PI) + second * (Math.PI / 30),
+          strokeColor: hex("a01e1e"),
+          strokeWidth: 30
+        });
+        canvas.arc("minute", {
+          x: 170,
+          y: 170,
+          radius: 120,
+          start: 3/2 * Math.PI,
+          arcLength: (3/2 * Math.PI) + minute * (Math.PI / 30),
+          strokeColor: hex("871ca2"),
+          strokeWidth: 30
+        });
+        canvas.arc("hour", {
+          x: 170,
+          y: 170,
+          radius: 85,
+          start: 3/2 * Math.PI,
+          arcLength: (3/2 * Math.PI) + hour * (Math.PI / 12),
+          strokeColor: hex("475777"),
+          strokeWidth: 30
+        });
+        canvas.arc("day", {
+          x: 170,
+          y: 170,
+          radius: 50,
+          start: 3/2 * Math.PI,
+          arcLength: (3/2 * Math.PI) + day * 2 * (Math.PI / daysInMonth),
+          strokeColor: hex("46795a"),
+          strokeWidth: 30
+        });
+        canvas.arc("month", {
+          x: 170,
+          y: 170,
+          radius: 15,
+          start: 3/2 * Math.PI,
+          arcLength: (3/2 * Math.PI) + month * (Math.PI / 6),
+          strokeColor: hex("6d7747"),
+          strokeWidth: 30
+        });
+        refreshTime();
+        canvas.autoDraw();
+      }, false);
+    </script>
+  </body>
+</html>
