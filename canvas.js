@@ -53,14 +53,47 @@
       }
       this.canvas.width = width != null ? width : 200;
       this.canvas.height = height != null ? height : 200;
+      this.hiddenCanvas = document.createElement("canvas");
+      this.hiddenCanvas.width = width != null ? width : 200;
+      this.hiddenCanvas.height = height != null ? height : 200;
+      this.cursorPos = [0, 0];
+      this.canvas.addEventListener("mousemove", __bind(function(event) {
+        return this.cursorPos = [event.offsetX, event.offsetY];
+      }, this));
+      this.canvas.addEventListener("click", __bind(function(event) {
+        var callback, id, name, shape, _ref, _results;
+        _ref = this.registry;
+        _results = [];
+        for (id in _ref) {
+          shape = _ref[id];
+          _results.push((function() {
+            var _ref, _results;
+            if (shape.isMouseOver) {
+              _ref = shape.events.click;
+              _results = [];
+              for (name in _ref) {
+                callback = _ref[name];
+                _results.push(callback());
+              }
+              return _results;
+            }
+          })());
+        }
+        return _results;
+      }, this));
       if ((args[0] != null) && typeof args[0] === "number") {
         this.canvas.width = args[0];
         this.canvas.height = (args[1] != null) && typeof args[1] === "number" ? args[1] : args[0];
+        this.hiddenCanvas.width = args[0];
+        this.hiddenCanvas.height = (args[1] != null) && typeof args[1] === "number" ? args[1] : args[0];
       } else if ((args[1] != null) && typeof args[1] === "number") {
         this.canvas.width = args[1];
         this.canvas.height = (args[2] != null) && typeof args[2] === "number" ? args[2] : args[1];
+        this.hiddenCanvas.width = args[1];
+        this.hiddenCanvas.height = (args[2] != null) && typeof args[2] === "number" ? args[2] : args[1];
       }
       this.ctx = this.canvas.getContext("2d");
+      this.hiddenCtx = this.hiddenCanvas.getContext("2d");
       this.ctx.cursor = {
         x: 0,
         y: 0
@@ -98,6 +131,45 @@
         return this.ctx.cursor = {
           x: this.ctx.cursor.x + x,
           y: this.ctx.cursor.y + y
+        };
+      }, this);
+      this.hiddenCtx.cursor = {
+        x: 0,
+        y: 0
+      };
+      this.hiddenCtx.relLineTo = __bind(function(x, y) {
+        this.hiddenCtx.lineTo(x + this.hiddenCtx.cursor.x, y + this.hiddenCtx.cursor.y);
+        return this.hiddenCtx.cursor = {
+          x: this.hiddenCtx.cursor.x + x,
+          y: this.hiddenCtx.cursor.y + y
+        };
+      }, this);
+      this.hiddenCtx.relMoveTo = __bind(function(x, y) {
+        this.hiddenCtx.moveTo(x + this.hiddenCtx.cursor.x, y + this.hiddenCtx.cursor.y);
+        return this.hiddenCtx.cursor = {
+          x: this.hiddenCtx.cursor.x + x,
+          y: this.hiddenCtx.cursor.y + y
+        };
+      }, this);
+      this.hiddenCtx.relArc = __bind(function(x, y, radius, startAngle, endAngle, anticlockwise) {
+        this.hiddenCtx.arc(x + this.hiddenCtx.cursor.x, y + this.hiddenCtx.cursor.y, radius, startAngle, endAngle, anticlockwise);
+        return this.hiddenCtx.cursor = {
+          x: this.hiddenCtx.cursor.x + x,
+          y: this.hiddenCtx.cursor.y + y
+        };
+      }, this);
+      this.hiddenCtx.relQuadraticCurveTo = __bind(function(cp1x, cp1y, x, y) {
+        this.hiddenCtx.quadraticCurveTo(cp1x + this.hiddenCtx.cursor.x, cp1y + this.hiddenCtx.cursor.y, x + this.hiddenCtx.cursor.x, y + this.hiddenCtx.cursor.y);
+        return this.hiddenCtx.cursor = {
+          x: this.hiddenCtx.cursor.x + x,
+          y: this.hiddenCtx.cursor.y + y
+        };
+      }, this);
+      this.hiddenCtx.relBezierCurveTo = __bind(function(cp1x, cp1y, cp2x, cp2y, x, y) {
+        this.hiddenCtx.bezierCurveTo(cp1x + this.hiddenCtx.cursor.x, cp1y + this.hiddenCtx.cursor.y, cp2x + this.hiddenCtx.cursor.x, cp2y + this.hiddenCtx.cursor.y, x + this.hiddenCtx.cursor.x, y + this.hiddenCtx.cursor.y);
+        return this.hiddenCtx.cursor = {
+          x: this.hiddenCtx.cursor.x + x,
+          y: this.hiddenCtx.cursor.y + y
         };
       }, this);
       this.autoDraw.state = true;
@@ -260,7 +332,12 @@
         strokeColor: rgba(0, 0, 0, 0),
         strokeWidth: 0,
         strokeCap: "butt",
-        strokeJoin: "miter"
+        strokeJoin: "miter",
+        events: {
+          mousein: {},
+          mouseout: {},
+          click: {}
+        }
       } : this.registry[id];
       _opts = {};
       for ($default in defaults) {
@@ -280,7 +357,12 @@
         strokeColor: rgba(0, 0, 0, 0),
         strokeWidth: 0,
         strokeCap: "butt",
-        strokeJoin: "miter"
+        strokeJoin: "miter",
+        events: {
+          mousein: {},
+          mouseout: {},
+          click: {}
+        }
       } : this.registry[id];
       _opts = {};
       for ($default in defaults) {
@@ -301,7 +383,13 @@
         strokeColor: rgba(0, 0, 0, 0),
         strokeWidth: 0,
         strokeCap: "butt",
-        strokeJoin: "miter"
+        strokeJoin: "miter",
+        isMouseOver: false,
+        events: {
+          mousein: {},
+          mouseout: {},
+          click: {}
+        }
       } : this.registry[id];
       _opts = {};
       for ($default in defaults) {
@@ -327,7 +415,13 @@
         },
         params: [],
         lineColor: rgba(0, 0, 0, 0),
-        lineWidth: 0
+        lineWidth: 0,
+        isMouseOver: false,
+        events: {
+          mousein: {},
+          mouseout: {},
+          click: {}
+        }
       } : this.registry[id];
       _opts = {};
       for ($default in defaults) {
@@ -350,7 +444,13 @@
         strokeColor: rgba(0, 0, 0, 0),
         strokeWidth: 0,
         strokeCap: "butt",
-        strokeJoin: "miter"
+        strokeJoin: "miter",
+        isMouseOver: false,
+        events: {
+          mousein: {},
+          mouseout: {},
+          click: {}
+        }
       } : this.registry[id];
       _opts = {};
       for ($default in defaults) {
@@ -360,94 +460,165 @@
       return this.registry[id] = options;
     };
     Canvas.prototype.draw = function() {
-      var id, incrementXPerPixel, incrementYPerPixel, pixelsPerXUnit, pixelsPerYUnit, result, shape, x, xEnd, xPix, xStart, yClipBottom, yClipTop, yPix, _ref, _results;
+      var callback, id, imgd, incrementXPerPixel, incrementYPerPixel, name, pix, pixelsPerXUnit, pixelsPerYUnit, result, shape, x, xEnd, xPix, xStart, yClipBottom, yClipTop, yPix, _ref, _ref2, _results;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       _ref = this.registry;
       _results = [];
       for (id in _ref) {
         shape = _ref[id];
-        _results.push((function() {
-          switch (shape.type) {
-            case "rectangle":
-              this.ctx.beginPath();
-              this.ctx.fillStyle = shape.fillColor;
-              this.ctx.strokeStyle = shape.strokeColor;
-              this.ctx.lineWidth = shape.strokeWidth;
-              this.ctx.lineCap = shape.strokeCap;
-              this.ctx.lineJoin = shape.strokeJoin;
-              this.ctx.rect(shape.x, shape.y, shape.width, shape.height);
-              this.ctx.closePath();
-              this.ctx.fill();
-              return this.ctx.stroke();
-            case "circle":
-              this.ctx.beginPath();
-              this.ctx.fillStyle = shape.fillColor;
-              this.ctx.strokeStyle = shape.strokeColor;
-              this.ctx.lineWidth = shape.strokeWidth;
-              this.ctx.lineCap = shape.strokeCap;
-              this.ctx.lineJoin = shape.strokeJoin;
-              this.ctx.arc(shape.x, shape.y, shape.radius, 0, 2 * Math.PI, true);
-              this.ctx.closePath();
-              this.ctx.fill();
-              return this.ctx.stroke();
-            case "path":
-              this.ctx.beginPath();
-              this.ctx.fillStyle = shape.fillColor;
-              this.ctx.strokeStyle = shape.strokeColor;
-              this.ctx.lineWidth = shape.strokeWidth;
-              this.ctx.lineCap = shape.strokeCap;
-              this.ctx.lineJoin = shape.strokeJoin;
-              this.ctx.cursor = {
-                x: shape.x,
-                y: shape.y
-              };
-              this.ctx.moveTo(shape.x, shape.y);
-              if (shape.params.constructor.name === "Array") {
-                shape.path.apply(this.ctx, shape.params);
-              } else if (shape.params.constructor.name === "Object") {
-                shape.path.call(this.ctx, shape.params);
+        this.hiddenCtx.clearRect(0, 0, this.hiddenCanvas.width, this.hiddenCanvas.height);
+        this.registry[id].wasMouseOver = shape.isMouseOver;
+        switch (shape.type) {
+          case "rectangle":
+            this.hiddenCtx.beginPath();
+            this.hiddenCtx.fillStyle = "#000000";
+            this.hiddenCtx.strokeStyle = "#000000";
+            this.hiddenCtx.lineWidth = shape.strokeWidth;
+            this.hiddenCtx.lineCap = shape.strokeCap;
+            this.hiddenCtx.lineJoin = shape.strokeJoin;
+            this.hiddenCtx.rect(shape.x, shape.y, shape.width, shape.height);
+            this.hiddenCtx.closePath();
+            this.hiddenCtx.fill();
+            this.hiddenCtx.stroke();
+            imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
+            pix = imgd.data;
+            shape.isMouseOver = pix[3] === 255;
+            this.ctx.beginPath();
+            this.ctx.fillStyle = shape.fillColor;
+            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.lineWidth = shape.strokeWidth;
+            this.ctx.lineCap = shape.strokeCap;
+            this.ctx.lineJoin = shape.strokeJoin;
+            this.ctx.rect(shape.x, shape.y, shape.width, shape.height);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.stroke();
+            break;
+          case "circle":
+            this.hiddenCtx.beginPath();
+            this.hiddenCtx.fillStyle = "#000000";
+            this.hiddenCtx.strokeStyle = "#000000";
+            this.hiddenCtx.lineWidth = shape.strokeWidth;
+            this.hiddenCtx.lineCap = shape.strokeCap;
+            this.hiddenCtx.lineJoin = shape.strokeJoin;
+            this.hiddenCtx.arc(shape.x, shape.y, shape.radius, 0, 2 * Math.PI, true);
+            this.hiddenCtx.closePath();
+            this.hiddenCtx.fill();
+            this.hiddenCtx.stroke();
+            imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
+            pix = imgd.data;
+            shape.isMouseOver = pix[3] === 255;
+            this.ctx.beginPath();
+            this.ctx.fillStyle = shape.fillColor;
+            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.lineWidth = shape.strokeWidth;
+            this.ctx.lineCap = shape.strokeCap;
+            this.ctx.lineJoin = shape.strokeJoin;
+            this.ctx.arc(shape.x, shape.y, shape.radius, 0, 2 * Math.PI, true);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.stroke();
+            break;
+          case "path":
+            this.hiddenCtx.beginPath();
+            this.hiddenCtx.fillStyle = "#000000";
+            this.hiddenCtx.strokeStyle = "#000000";
+            this.hiddenCtx.lineWidth = shape.strokeWidth;
+            this.hiddenCtx.lineCap = shape.strokeCap;
+            this.hiddenCtx.lineJoin = shape.strokeJoin;
+            this.hiddenCtx.cursor = {
+              x: shape.x,
+              y: shape.y
+            };
+            this.hiddenCtx.moveTo(shape.x, shape.y);
+            if (shape.params.constructor.name === "Array") {
+              shape.path.apply(this.hiddenCtx, shape.params);
+            } else if (shape.params.constructor.name === "Object") {
+              shape.path.call(this.hiddenCtx, shape.params);
+            }
+            this.hiddenCtx.fill();
+            this.hiddenCtx.stroke();
+            this.hiddenCtx.closePath();
+            imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
+            pix = imgd.data;
+            shape.isMouseOver = pix[3] === 255;
+            this.ctx.beginPath();
+            this.ctx.fillStyle = shape.fillColor;
+            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.lineWidth = shape.strokeWidth;
+            this.ctx.lineCap = shape.strokeCap;
+            this.ctx.lineJoin = shape.strokeJoin;
+            this.ctx.cursor = {
+              x: shape.x,
+              y: shape.y
+            };
+            this.ctx.moveTo(shape.x, shape.y);
+            if (shape.params.constructor.name === "Array") {
+              shape.path.apply(this.ctx, shape.params);
+            } else if (shape.params.constructor.name === "Object") {
+              shape.path.call(this.ctx, shape.params);
+            }
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.ctx.closePath();
+            break;
+          case "plot":
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = shape.lineColor;
+            this.ctx.lineWidth = shape.lineWidth;
+            pixelsPerXUnit = shape.xScale;
+            incrementXPerPixel = 1 / pixelsPerXUnit;
+            pixelsPerYUnit = shape.yScale;
+            incrementYPerPixel = 1 / pixelsPerYUnit;
+            xStart = shape.x + pixelsPerXUnit * shape.xMin;
+            xEnd = shape.x + pixelsPerXUnit * shape.xMax;
+            yClipTop = shape.y - pixelsPerYUnit * shape.yMax;
+            yClipBottom = shape.y - pixelsPerYUnit * shape.yMin;
+            this.ctx.moveTo(xStart, shape.y - (shape.equation(x, shape.params)) * pixelsPerYUnit);
+            for (xPix = xStart; (xStart <= xEnd ? xPix < xEnd : xPix > xEnd); (xStart <= xEnd ? xPix += 1 : xPix -= 1)) {
+              x = shape.xMin + (xPix - xStart) / pixelsPerXUnit;
+              result = shape.equation(x, shape.params);
+              yPix = shape.y - result * pixelsPerYUnit;
+              if ((yClipTop < yPix && yPix < yClipBottom)) {
+                this.ctx.lineTo(xPix, yPix);
+              } else if (yPix < yClipTop) {
+                this.ctx.moveTo(xPix * ((yClipTop - yPix) / -yPix), yClipTop);
               }
-              this.ctx.fill();
-              this.ctx.stroke();
-              return this.ctx.closePath();
-            case "plot":
-              this.ctx.beginPath();
-              this.ctx.strokeStyle = shape.lineColor;
-              this.ctx.lineWidth = shape.lineWidth;
-              pixelsPerXUnit = shape.xScale;
-              incrementXPerPixel = 1 / pixelsPerXUnit;
-              pixelsPerYUnit = shape.yScale;
-              incrementYPerPixel = 1 / pixelsPerYUnit;
-              xStart = shape.x + pixelsPerXUnit * shape.xMin;
-              xEnd = shape.x + pixelsPerXUnit * shape.xMax;
-              yClipTop = shape.y - pixelsPerYUnit * shape.yMax;
-              yClipBottom = shape.y - pixelsPerYUnit * shape.yMin;
-              this.ctx.moveTo(xStart, shape.y - (shape.equation(x, shape.params)) * pixelsPerYUnit);
-              for (xPix = xStart; (xStart <= xEnd ? xPix < xEnd : xPix > xEnd); (xStart <= xEnd ? xPix += 1 : xPix -= 1)) {
-                x = shape.xMin + (xPix - xStart) / pixelsPerXUnit;
-                result = shape.equation(x, shape.params);
-                yPix = shape.y - result * pixelsPerYUnit;
-                if ((yClipTop < yPix && yPix < yClipBottom)) {
-                  this.ctx.lineTo(xPix, yPix);
-                } else if (yPix < yClipTop) {
-                  this.ctx.moveTo(xPix * ((yClipTop - yPix) / -yPix), yClipTop);
-                }
-              }
-              this.ctx.stroke();
-              return this.ctx.closePath();
-            case "arc":
-              this.ctx.beginPath();
-              this.ctx.fillStyle = shape.fillColor;
-              this.ctx.strokeStyle = shape.strokeColor;
-              this.ctx.lineWidth = shape.strokeWidth;
-              this.ctx.lineCap = shape.strokeCap;
-              this.ctx.lineJoin = shape.strokeJoin;
-              this.ctx.arc(shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false);
-              this.ctx.fill();
-              this.ctx.stroke();
-              return this.ctx.closePath();
+            }
+            this.ctx.stroke();
+            this.ctx.closePath();
+            break;
+          case "arc":
+            this.ctx.beginPath();
+            this.ctx.fillStyle = shape.fillColor;
+            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.lineWidth = shape.strokeWidth;
+            this.ctx.lineCap = shape.strokeCap;
+            this.ctx.lineJoin = shape.strokeJoin;
+            this.ctx.arc(shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false);
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
+        if (shape.isMouseOver && !shape.wasMouseOver) {
+          _ref2 = shape.events.mousein;
+          for (name in _ref2) {
+            callback = _ref2[name];
+            callback();
           }
-        }).call(this));
+        }
+        _results.push((function() {
+          var _ref, _results;
+          if (!shape.isMouseOver && shape.wasMouseOver) {
+            _ref = shape.events.mouseout;
+            _results = [];
+            for (name in _ref) {
+              callback = _ref[name];
+              _results.push(callback());
+            }
+            return _results;
+          }
+        })());
       }
       return _results;
     };

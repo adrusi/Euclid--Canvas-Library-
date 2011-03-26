@@ -4,6 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Untitled Document</title>
+    <link rel="stylesheet" href="https://github.com/adrusi/CSS-Reset/raw/master/reset.css" />
   </head>
   <body>
     <canvas id="canvas">
@@ -69,6 +70,21 @@
           strokeWidth: 10,
           strokeJoin: "round"
         });
+        canvas.get("box").events.mousein.notify = function() {
+          console.log("mousein");
+        };
+        canvas.get("box").events.mouseout.notify = function() {
+          console.log("mouseout");
+        };
+        canvas.get("box").events.click.notify = function() {
+          canvas.animate("box", {
+            strokeWidth: 0
+          }, 500, "easeOut", function() {
+            canvas.animate("box", {
+              strokeWidth: 10
+            }, 500, "easeIn");
+          });
+        };
         canvas.circle("ball", {
           x: 100,
           y: 200,
@@ -113,10 +129,20 @@
             this.relQuadraticCurveTo(-200, 100, -100, -100);
           },
           params: [],
-          x: 200,
-          y: 200,
+          x: 250,
+          y: 250,
           fillColor: rgba(100,100,200,0.4)
         });
+        canvas.get("rel").events.mousein.notify = function() {
+          canvas.animate("rel", {
+            fillColor: rgba(200, 200, 100, 1)
+          }, 500, "easeInOut");
+        };
+        canvas.get("rel").events.mouseout.notify = function() {
+          canvas.animate("rel", {
+            fillColor: rgba(100, 100, 200, 0.4)
+          }, 500, "easeInOut");
+        };
         canvas.autoDraw(); // doesn't use setInterval, rather a recursive setTimeout
         canvas.animate("ball", {
           radius: 50

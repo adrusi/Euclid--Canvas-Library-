@@ -99,10 +99,81 @@ The most complex feature of Euclid is paths. Using paths requires knowledge of c
       y: 20
     });
 
-So when we draw this path it looks like a parallelogram. You can animate it just like anything else, modifying the entire `params` array, or animate each param individually. The latter is more powerful because it allows you to specify different easing and duration to different params. This is done using the `pathAnimate` method, which accepts the following parameters:
+So when we draw this path it looks like a parallelogram. You can animate it just like anything else, modifying the entire `params` array, or animate each param individually. The latter is more powerful because it allows you to specify different easing and duration to different params. This is done using the `arrayAnimate` method, which accepts the following parameters:
 
-    canvas.pathAnimate(shapeId, paramIndex, animateTo, duration, easing);
+    canvas.arrayAnimate(shapeId, paramIndex, animateTo, duration, easing);
     
 You can animate the skew of the above path like so:
 
-    canvas.pathAnimate("path", 3, 50, 1000, "elasticOut");
+    canvas.arrayAnimate("path", 3, 50, 1000, "elasticOut");
+
+For readability's sake, you can use an object instead of an array. The code shown above would become something like:
+
+    canvas.path("path", {
+      path: function(_) {
+        this.lineTo(_.x + dims, _.y);
+        this.lineTo(_.x + _.dims + _.skew, _.y + _.dims);
+        this.lineTo(_.x + _.dims + _.skew, _.y + _.dims);
+        this.lineTo(_.x + _.skew, _.y + _.dims);
+        this.lineTo(_.x, _.y);
+      },
+      params: {
+          x: 20,
+          y: 20,
+          dims: 100,
+          skew: 5
+      },
+      fillColor: rgb(0, 255, 0),
+      x: 20,
+      y: 20
+    });
+
+The `objAnimate` method is almost identical to the `arrayAnimate` method except that it takes a string instead of an index:
+
+    canvas.objAnimate("path", "skew", 50, 1000, "elasticOut");
+
+###Relative Drawing
+Euclid also extends the native canvas functions to allow you to draw relative to a cursor, like in SVG. Just add `rel` before the name of the a drawing function
+to make it relative to the cursor
+
+Plots
+-----
+An interesting feature of euclid that you're unlikely to find elsewhere is the "plot" shape type.
+The plot shape type creates a graph of a mathematical equation. As always, it's animatable.
+
+Plot shapes accept most of the regular attributes:
+
+    x: 0
+    y: 0
+    xMax: 0
+    yMax: 0
+    xMin: 0
+    yMin: 0
+    xScale: 1
+    yScale: 1
+    equation: (x, params) ->
+        x
+    params: []
+    lineColor: rgba(0,0,0,0)
+    lineWidth: 0
+
+The new attributes are for the dimensions of the graph (the frame limits) and the number of pixels per unit
+on the axis. The x and y position position the origin of the plot instead of the top-left corner.
+The equation property is where the action is. As its name suggests, it is the equation to plot. This could
+be something simple like the default (y = x) or something a bit more interesting, like:
+
+    equation: function(x, params) {
+        return Math.sin(x);
+    }
+
+You can also animate the plot using the params just as you would with a path.
+
+Mouse Events
+------------
+Euclid implements experimental mouse event support. Currently the only supported events are click, mousein and mouseout
+These events work on all shapes except plots (for now). The API for binding events is currently very mediocre
+and needs to be refined, but you can bind an event to a shape like this:
+
+    canvas.get(%shape_id%).events.%event_type%.%event_identifier% = function() {
+        // event code here
+    };

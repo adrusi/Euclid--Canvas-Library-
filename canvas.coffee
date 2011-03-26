@@ -53,15 +53,33 @@ class @Canvas
 
     @canvas.width = if width? then width else 200 # default dimensions
     @canvas.height = if height? then height else 200
+    
+    @hiddenCanvas = document.createElement "canvas" # the hidden canvas is used for testing to see if the mouse is over a shape
+    @hiddenCanvas.width = if width? then width else 200
+    @hiddenCanvas.height = if height? then height else 200
+    
+    @cursorPos = [0, 0]
+    
+    @canvas.addEventListener "mousemove", (event) =>
+      @cursorPos = [event.offsetX, event.offsetY]
+    @canvas.addEventListener "click", (event) =>
+      for id, shape of @registry
+        if shape.isMouseOver
+          callback() for name, callback of shape.events.click
 
     if args[0]? and typeof args[0] is "number" # if only dimensions were passed as regular params
       @canvas.width = args[0]
       @canvas.height = if args[1]? and typeof args[1] is "number" then args[1] else args[0]
+      @hiddenCanvas.width = args[0]
+      @hiddenCanvas.height = if args[1]? and typeof args[1] is "number" then args[1] else args[0]
     else if args[1]? and typeof args[1] is "number" # if an element and dimensions were passed as regular params
       @canvas.width = args[1]
       @canvas.height = if args[2]? and typeof args[2] is "number" then args[2] else args[1]
+      @hiddenCanvas.width = args[1]
+      @hiddenCanvas.height = if args[2]? and typeof args[2] is "number" then args[2] else args[1]
 
     @ctx = @canvas.getContext "2d"
+    @hiddenCtx = @hiddenCanvas.getContext "2d"
     ##== add relative drawing to canvas for use in paths
     @ctx.cursor = { x: 0, y: 0 }
     @ctx.relLineTo = (x, y) =>
@@ -80,6 +98,24 @@ class @Canvas
       @ctx.bezierCurveTo cp1x + @ctx.cursor.x, cp1y + @ctx.cursor.y, cp2x + @ctx.cursor.x, cp2y + @ctx.cursor.y,
         x + @ctx.cursor.x, y + @ctx.cursor.y
       @ctx.cursor = { x: @ctx.cursor.x + x, y: @ctx.cursor.y + y }
+    
+    @hiddenCtx.cursor = { x: 0, y: 0 }
+    @hiddenCtx.relLineTo = (x, y) =>
+      @hiddenCtx.lineTo x + @hiddenCtx.cursor.x, y + @hiddenCtx.cursor.y
+      @hiddenCtx.cursor = { x: @hiddenCtx.cursor.x + x, y: @hiddenCtx.cursor.y + y }
+    @hiddenCtx.relMoveTo = (x, y) =>
+      @hiddenCtx.moveTo x + @hiddenCtx.cursor.x, y + @hiddenCtx.cursor.y
+      @hiddenCtx.cursor = { x: @hiddenCtx.cursor.x + x, y: @hiddenCtx.cursor.y + y }
+    @hiddenCtx.relArc = (x, y, radius, startAngle, endAngle, anticlockwise) =>
+      @hiddenCtx.arc x + @hiddenCtx.cursor.x, y + @hiddenCtx.cursor.y, radius, startAngle, endAngle, anticlockwise
+      @hiddenCtx.cursor = { x: @hiddenCtx.cursor.x + x, y: @hiddenCtx.cursor.y + y }
+    @hiddenCtx.relQuadraticCurveTo = (cp1x, cp1y, x, y) =>
+      @hiddenCtx.quadraticCurveTo cp1x + @hiddenCtx.cursor.x, cp1y + @hiddenCtx.cursor.y, x + @hiddenCtx.cursor.x, y + @hiddenCtx.cursor.y
+      @hiddenCtx.cursor = { x: @hiddenCtx.cursor.x + x, y: @hiddenCtx.cursor.y + y }
+    @hiddenCtx.relBezierCurveTo = (cp1x, cp1y, cp2x, cp2y, x, y) =>
+      @hiddenCtx.bezierCurveTo cp1x + @hiddenCtx.cursor.x, cp1y + @hiddenCtx.cursor.y, cp2x + @hiddenCtx.cursor.x, cp2y + @hiddenCtx.cursor.y,
+        x + @hiddenCtx.cursor.x, y + @hiddenCtx.cursor.y
+      @hiddenCtx.cursor = { x: @hiddenCtx.cursor.x + x, y: @hiddenCtx.cursor.y + y }
     ##== END
     @autoDraw.state = on
 
@@ -220,6 +256,10 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        events:
+          mousein: {}
+          mouseout: {}
+          click: {}
       }
     else
       @registry[id]
@@ -241,6 +281,10 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        events:
+          mousein: {}
+          mouseout: {}
+          click: {}
       }
     else
       @registry[id]
@@ -263,6 +307,11 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        isMouseOver: no
+        events:
+          mousein: {}
+          mouseout: {}
+          click: {}
       }
     else
       @registry[id]
@@ -289,6 +338,11 @@ class @Canvas
         params: []
         lineColor: rgba(0,0,0,0)
         lineWidth: 0
+        isMouseOver: no
+        events:
+          mousein: {}
+          mouseout: {}
+          click: {}
       }
     else
       @registry[id]
@@ -313,6 +367,11 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        isMouseOver: no
+        events:
+          mousein: {}
+          mouseout: {}
+          click: {}
       }
     else
       @registry[id]
@@ -325,8 +384,23 @@ class @Canvas
   draw: ->
     @ctx.clearRect 0, 0, @canvas.width, @canvas.height
     for id, shape of @registry
+      @hiddenCtx.clearRect 0, 0, @hiddenCanvas.width, @hiddenCanvas.height
+      @registry[id].wasMouseOver = shape.isMouseOver
       switch shape.type
         when "rectangle"
+          @hiddenCtx.beginPath()
+          @hiddenCtx.fillStyle = "#000000"
+          @hiddenCtx.strokeStyle = "#000000"
+          @hiddenCtx.lineWidth = shape.strokeWidth
+          @hiddenCtx.lineCap = shape.strokeCap
+          @hiddenCtx.lineJoin = shape.strokeJoin
+          @hiddenCtx.rect shape.x, shape.y, shape.width, shape.height
+          @hiddenCtx.closePath()
+          @hiddenCtx.fill()
+          @hiddenCtx.stroke()
+          imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
+          pix = imgd.data
+          shape.isMouseOver = pix[3] is 255
           @ctx.beginPath()
           @ctx.fillStyle = shape.fillColor
           @ctx.strokeStyle = shape.strokeColor
@@ -338,6 +412,19 @@ class @Canvas
           @ctx.fill()
           @ctx.stroke()
         when "circle"
+          @hiddenCtx.beginPath()
+          @hiddenCtx.fillStyle = "#000000"
+          @hiddenCtx.strokeStyle = "#000000"
+          @hiddenCtx.lineWidth = shape.strokeWidth
+          @hiddenCtx.lineCap = shape.strokeCap
+          @hiddenCtx.lineJoin = shape.strokeJoin
+          @hiddenCtx.arc shape.x, shape.y, shape.radius, 0, 2 * Math.PI, true
+          @hiddenCtx.closePath()
+          @hiddenCtx.fill()
+          @hiddenCtx.stroke()
+          imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
+          pix = imgd.data
+          shape.isMouseOver = pix[3] is 255
           @ctx.beginPath()
           @ctx.fillStyle = shape.fillColor
           @ctx.strokeStyle = shape.strokeColor
@@ -349,6 +436,24 @@ class @Canvas
           @ctx.fill()
           @ctx.stroke()
         when "path"
+          @hiddenCtx.beginPath()
+          @hiddenCtx.fillStyle = "#000000"
+          @hiddenCtx.strokeStyle = "#000000"
+          @hiddenCtx.lineWidth = shape.strokeWidth
+          @hiddenCtx.lineCap = shape.strokeCap
+          @hiddenCtx.lineJoin = shape.strokeJoin
+          @hiddenCtx.cursor = { x: shape.x, y: shape.y }
+          @hiddenCtx.moveTo shape.x, shape.y
+          if shape.params.constructor.name is "Array"
+            shape.path.apply @hiddenCtx, shape.params
+          else if shape.params.constructor.name is "Object"
+            shape.path.call @hiddenCtx, shape.params
+          @hiddenCtx.fill()
+          @hiddenCtx.stroke()
+          @hiddenCtx.closePath()
+          imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
+          pix = imgd.data
+          shape.isMouseOver = pix[3] is 255
           @ctx.beginPath()
           @ctx.fillStyle = shape.fillColor
           @ctx.strokeStyle = shape.strokeColor
@@ -401,7 +506,10 @@ class @Canvas
           @ctx.fill()
           @ctx.stroke()
           @ctx.closePath()
-              
+      if shape.isMouseOver and not shape.wasMouseOver
+        callback() for name, callback of shape.events.mousein
+      if not shape.isMouseOver and shape.wasMouseOver
+        callback() for name, callback of shape.events.mouseout
           
   autoDraw: (fps = 30) ->
     @autoDraw.state = on
