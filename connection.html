@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Untitled Document</title>
+    <link rel="stylesheet" href="https://github.com/adrusi/CSS-Reset/raw/master/reset.css" />
+  </head>
+  <body>
+    <canvas id="canvas">
+    
+    </canvas>
+    <script src="canvas.js"></script>
+    <script>
+      addEventListener("load", function() {
+        var canvas = new Canvas({
+              element: "canvas",
+              width: 1000,
+              height: 600
+            }),
+            onDrag = function(shape) {
+              return function(event) {
+                var downX = event.canvas.x,
+                    downY = event.canvas.y,
+                    shapeX = event.shape.x,
+                    shapeY = event.shape.y;
+                var move = canvas.bindEvent("mousemove", shape, function(event) {
+                  var movedX = event.canvas.x,
+                      movedY = event.canvas.y,
+                      box1, box2;
+                  canvas.rectangle(shape, {
+                    x: downX - shapeX + (movedX - downX),
+                    y: downY - shapeY + (movedY - downY)
+                  });
+                  box1 = canvas.get("box1");
+                  box2 = canvas.get("box2");
+                  canvas.path("connection", {
+                    params: {
+                      startX: box1.width + box1.x, // box1.width + box1.x
+                      startY: box1.y + 50, // box1.y + 50
+                      endX: box2.x, // box2.x
+                      endY: box2.y + 50 // box2.y + 50
+                    }
+                  });
+                  downX = canvas.get(shape).x;
+                  downY = canvas.get(shape).y;
+                });
+                var mouseup = canvas.bindEvent("mouseup", shape, function() {
+                  canvas.removeEvent("mousemove", shape, move);
+                  canvas.removeEvent("mouseup", shape, mouseup);
+                });
+              };
+            },
+            glowIn = function(shape) {
+              return function() {
+                canvas.animate(shape, {
+                  strokeColor: rgba(0,127,255,0.8),
+                  fillColor: (shape !== "connection") ? rgba(0,63,127,0.8) : rgba(0,0,0,0)
+                }, 500, "easeInOut");
+              }
+            },
+            glowOut = function(shape) {
+              return function() {
+                canvas.animate(shape, {
+                  strokeColor: rgba(0,0,0,0.8),
+                  fillColor: (shape !== "connection") ? rgba(150,150,150,0.8) : rgba(0,0,0,0)
+                }, 500, "easeInOut");
+              }
+            };
+        canvas.rectangle("box1", {
+          x: 50,
+          y: 400,
+          height: 100,
+          width: 150,
+          fillColor: rgba(150,150,150,0.8),
+          strokeColor: rgba(0,0,0,0.8),
+          strokeWidth: 1,
+          strokeJoin: "round"
+        });
+        canvas.rectangle("box2", {
+          x: 750,
+          y: 100,
+          height: 100,
+          width: 150,
+          fillColor: rgba(150,150,150,0.8),
+          strokeColor: rgba(0,0,0,0.8),
+          strokeWidth: 1,
+          strokeJoin: "round"
+        });
+        canvas.path("connection", {
+          x: 200,
+          y: 450,
+          strokeColor: hex("#000000"),
+          strokeWidth: 5,
+          fillPath: false,
+          closePath: false,
+          path: function($) {
+            this.moveTo($.startX, $.startY);
+            this.bezierCurveTo(($.endX - $.startX) / 2 + $.startX, $.startY,
+                               ($.endX - $.startX) / 2 + $.startX, $.endY,
+                               $.endX, $.endY);
+          },
+          params: {
+            startX: 200, // box1.width + box1.x
+            startY: 450, // box1.y + 50
+            endX: 750, // box2.x
+            endY: 150 // box2.y + 50
+          }
+        });
+        canvas.moveToBack("connection");
+        canvas.bindEvent("mousedown", "box1", onDrag("box1"));
+        canvas.bindEvent("mousedown", "box2", onDrag("box2"));
+        canvas.bindEvent("mousein", "connection", glowIn("connection"));
+        canvas.bindEvent("mouseout", "connection", glowOut("connection"));
+        canvas.bindEvent("mousein", "box1", glowIn("box1"));
+        canvas.bindEvent("mouseout", "box1", glowOut("box1"));
+        canvas.bindEvent("mousein", "box2", glowIn("box2"));
+        canvas.bindEvent("mouseout", "box2", glowOut("box2"));
+        canvas.autoDraw();
+        console.log(canvas);
+      }, false);
+    </script>
+  </body>
+</html>

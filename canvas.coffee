@@ -8,10 +8,10 @@
 ###
 
 @rgba = (r, g, b, a) ->
-  "rgba(#{r}, #{g}, #{b}, #{a})"
+  "rgba(#{Math.round(r)}, #{Math.round(g)}, #{Math.round(b)}, #{a})"
 
 @rgb = (r, g, b) ->
-  "rgba(#{r}, #{g}, #{b}, 1)"
+  "rgba(#{Math.round(r)}, #{Math.round(g)}, #{Math.round(b)}, 1)"
 
 @hex = (value) ->
   value = value.replace /^\#/, ""
@@ -25,9 +25,9 @@
 
 class @Canvas
   constructor: ->
-    args = Array::slice.call arguments, 0 # get the arguments object as an array
+    args = Array::slice.call arguments # get the arguments object as an array
 
-    if args[0]? and args[0] instanceof HTMLElement # if the first arg is an html element
+    if args[0]? and args[0].nodeType? # if the first arg is an html element
       elem = args[0]
     else if args[0]? and typeof args[0] is "string" # if the first arg is the id of an element
       elem = document.getElementById args[0]
@@ -38,7 +38,6 @@ class @Canvas
         height: 200
       props[prop] = args[0][prop] for prop of args[0] # override the defalults in `props` if set by the user
       elem = if props.element instanceof HTMLElement then props.element else document.getElementById props.element
-      console.log elem
       width = props.width
       height = props.height
     else if typeof args[0] is "number" or not args[0]? # if the first arg doesn't refer to an element
@@ -61,11 +60,74 @@ class @Canvas
     @cursorPos = [0, 0]
     
     @canvas.addEventListener "mousemove", (event) =>
-      @cursorPos = [event.offsetX, event.offsetY]
-    @canvas.addEventListener "click", (event) =>
+      @cursorPos = [event.layerX, event.layerY]
+      cursorPos = @cursorPos
       for id, shape of @registry
         if shape.isMouseOver
-          callback() for name, callback of shape.events.click
+          for callback in shape.events.mousemove
+            if callback?
+              if callback::constructor.length is 0
+                callback()
+              else
+                callback
+                  canvas:
+                    x: cursorPos[0]
+                    y: cursorPos[1]
+                  shape:
+                    x: shape.x - cursorPos[0]
+                    y: shape.y - cursorPos[1]
+    , false
+    @canvas.addEventListener "click", (event) =>
+      cursorPos = @cursorPos
+      for id, shape of @registry
+        if shape.isMouseOver
+          for callback in shape.events.click
+            if callback?
+              if callback::constructor.length is 0
+                callback()
+              else
+                callback
+                  canvas:
+                    x: cursorPos[0]
+                    y: cursorPos[1]
+                  shape:
+                    x: shape.x - cursorPos[0]
+                    y: shape.y - cursorPos[1]
+    , false
+    @canvas.addEventListener "mousedown", (event) =>
+      cursorPos = @cursorPos
+      for id, shape of @registry
+        if shape.isMouseOver
+          for callback in shape.events.mousedown
+            if callback?
+              if callback::constructor.length is 0
+                callback()
+              else
+                callback
+                  canvas:
+                    x: cursorPos[0]
+                    y: cursorPos[1]
+                  shape:
+                    x: cursorPos[0] - shape.x
+                    y: cursorPos[1] - shape.y
+    , false
+    @canvas.addEventListener "mouseup", (event) =>
+      cursorPos = @cursorPos
+      for id, shape of @registry
+        if shape.isMouseOver
+          for callback in shape.events.mouseup
+            if callback?
+              if callback::constructor.length is 0
+                callback()
+              else
+                callback
+                  canvas:
+                    x: cursorPos[0]
+                    y: cursorPos[1]
+                  shape:
+                    x: shape.x - cursorPos[0]
+                    y: shape.y - cursorPos[1]
+    , false
 
     if args[0]? and typeof args[0] is "number" # if only dimensions were passed as regular params
       @canvas.width = args[0]
@@ -120,6 +182,8 @@ class @Canvas
     @autoDraw.state = on
 
   registry: {}
+  zIndecies: []
+  
   easing:
     linear: (t, b, c, d) -> # current time in animation, start value, delta betweend start and end, duration
       c * t/d + b
@@ -141,7 +205,6 @@ class @Canvas
         c/2 * t*t*t*t + b
   	  else
   	    -1 * c/2 * ((t -= 2) * t*t*t - 2) + b
-  	  console.log "foo"
     elasticIn: (t, b, c, d, a, p) ->
       `(function() {
         if (t == 0) {
@@ -247,6 +310,7 @@ class @Canvas
     defaults = if not @registry[id]?
       {
         type: "rectangle"
+        zIndex: @zIndecies.length
         x: 0
         y: 0
         width: 0
@@ -256,10 +320,15 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        rotate: 0
+        rotateOrigin: "center"
         events:
-          mousein: {}
-          mouseout: {}
-          click: {}
+          mousein: []
+          mouseout: []
+          click: []
+          mousemove: []
+          mouseup: []
+          mousedown: []
       }
     else
       @registry[id]
@@ -268,11 +337,13 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
   
   circle: (id, options) ->
     defaults = if not @registry[id]?
       {
         type: "circle"
+        zIndex: @zIndecies.length
         x: 0
         y: 0
         radius: 0
@@ -281,10 +352,15 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        rotate: 0
+        rotateOrigin: "center"
         events:
-          mousein: {}
-          mouseout: {}
-          click: {}
+          mousein: []
+          mouseout: []
+          click: []
+          mousemove: []
+          mouseup: []
+          mousedown: []
       }
     else
       @registry[id]
@@ -293,11 +369,13 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
   
   path: (id, options) ->
     defaults = if not @registry[id]?
       {
         type: "path"
+        zIndex: @zIndecies.length
         x: 0
         y: 0
         path: ->
@@ -307,11 +385,18 @@ class @Canvas
         strokeWidth: 0
         strokeCap: "butt"
         strokeJoin: "miter"
+        fillPath: yes
+        closePath: yes
         isMouseOver: no
+        rotate: 0
+        rotateOrigin: "center"
         events:
-          mousein: {}
-          mouseout: {}
-          click: {}
+          mousein: []
+          mouseout: []
+          click: []
+          mousemove: []
+          mouseup: []
+          mousedown: []
       }
     else
       @registry[id]
@@ -320,11 +405,13 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
   
   plot: (id, options) ->
     defaults = if not @registry[id]?
       {
         type: "plot"
+        zIndex: @zIndecies.length
         x: 0
         y: 0
         xMax: 0
@@ -339,10 +426,15 @@ class @Canvas
         lineColor: rgba(0,0,0,0)
         lineWidth: 0
         isMouseOver: no
+        rotate: 0
+        rotateOrigin: "center"
         events:
-          mousein: {}
-          mouseout: {}
-          click: {}
+          mousein: []
+          mouseout: []
+          click: []
+          mousemove: []
+          mouseup: []
+          mousedown: []
       }
     else
       @registry[id]
@@ -351,11 +443,13 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
     
   arc: (id, options) ->
     defaults = if not @registry[id]?
       {
         type: "arc"
+        zIndex: @zIndecies.length
         x: 0
         y: 0
         radius: 0
@@ -368,10 +462,15 @@ class @Canvas
         strokeCap: "butt"
         strokeJoin: "miter"
         isMouseOver: no
+        rotate: 0
+        rotateOrigin: "center"
         events:
-          mousein: {}
-          mouseout: {}
-          click: {}
+          mousein: []
+          mouseout: []
+          click: []
+          mousemove: []
+          mouseup: []
+          mousedown: []
       }
     else
       @registry[id]
@@ -380,14 +479,41 @@ class @Canvas
       _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
     options = _opts
     @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
+    
+  lowLevel: (id, options) ->
+    defaults = if not @registry[id]?
+      {
+        type: "lowLevel"
+        zIndex: @zIndecies.length
+        operation: (canvas, params) ->
+        params: []
+      }
+    else
+      @registry[id]
+    _opts = {}
+    for $default of defaults
+      _opts[$default] = if options[$default]? and $default isnt "type" then options[$default] else defaults[$default]
+    options = _opts
+    @registry[id] = options
+    @zIndecies.push id unless @zIndecies[options.zIndex]
 
   draw: ->
     @ctx.clearRect 0, 0, @canvas.width, @canvas.height
-    for id, shape of @registry
+    for id in @zIndecies
+      shape = @registry[id]
       @hiddenCtx.clearRect 0, 0, @hiddenCanvas.width, @hiddenCanvas.height
       @registry[id].wasMouseOver = shape.isMouseOver
       switch shape.type
         when "rectangle"
+          rotateOrigin = if shape.rotateOrigin is "center"
+            [shape.x + shape.width / 2, shape.y + shape.height / 2]
+          else
+            shape.rotateOrigin
+          @hiddenCtx.save()
+          @hiddenCtx.translate rotateOrigin[0], rotateOrigin[1]
+          @hiddenCtx.rotate shape.rotate
+          @hiddenCtx.translate -rotateOrigin[0], -rotateOrigin[1]
           @hiddenCtx.beginPath()
           @hiddenCtx.fillStyle = "#000000"
           @hiddenCtx.strokeStyle = "#000000"
@@ -398,12 +524,23 @@ class @Canvas
           @hiddenCtx.closePath()
           @hiddenCtx.fill()
           @hiddenCtx.stroke()
+          @hiddenCtx.restore()
           imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
           pix = imgd.data
           shape.isMouseOver = pix[3] is 255
+          @ctx.save()
+          @ctx.translate rotateOrigin[0], rotateOrigin[1]
+          @ctx.rotate shape.rotate
+          @ctx.translate -rotateOrigin[0], -rotateOrigin[1]
           @ctx.beginPath()
-          @ctx.fillStyle = shape.fillColor
-          @ctx.strokeStyle = shape.strokeColor
+          @ctx.fillStyle = if not shape.fillColor.gradient?
+            shape.fillColor
+          else if shape.fillColor.gradient is "linear"
+            @getLinearGradient shape.fillColor.name
+          @ctx.strokeStyle = if not shape.strokeColor.gradient?
+            shape.strokeColor
+          else if shape.strokeColor.gradient is "linear"
+            @getLinearGradient shape.strokeColor.name
           @ctx.lineWidth = shape.strokeWidth
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
@@ -411,7 +548,16 @@ class @Canvas
           @ctx.closePath()
           @ctx.fill()
           @ctx.stroke()
+          @ctx.restore()
         when "circle"
+          rotateOrigin = if shape.rotateOrigin is "center"
+            [shape.x, shape.y]
+          else
+            shape.rotateOrigin
+          @hiddenCtx.save()
+          @hiddenCtx.translate rotateOrigin[0], rotateOrigin[1]
+          @hiddenCtx.rotate shape.rotate
+          @hiddenCtx.translate -rotateOrigin[0], -rotateOrigin[1]
           @hiddenCtx.beginPath()
           @hiddenCtx.fillStyle = "#000000"
           @hiddenCtx.strokeStyle = "#000000"
@@ -422,12 +568,23 @@ class @Canvas
           @hiddenCtx.closePath()
           @hiddenCtx.fill()
           @hiddenCtx.stroke()
+          @hiddenCtx.restore()
           imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
           pix = imgd.data
           shape.isMouseOver = pix[3] is 255
+          @ctx.save()
+          @ctx.translate rotateOrigin[0], rotateOrigin[1]
+          @ctx.rotate shape.rotate
+          @ctx.translate -rotateOrigin[0], -rotateOrigin[1]
           @ctx.beginPath()
-          @ctx.fillStyle = shape.fillColor
-          @ctx.strokeStyle = shape.strokeColor
+          @ctx.fillStyle = if not shape.fillColor.gradient?
+            shape.fillColor
+          else if shape.fillColor.gradient is "linear"
+            @getLinearGradient shape.fillColor.name
+          @ctx.strokeStyle = if not shape.strokeColor.gradient?
+            shape.strokeColor
+          else if shape.strokeColor.gradient is "linear"
+            @getLinearGradient shape.strokeColor.name
           @ctx.lineWidth = shape.strokeWidth
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
@@ -435,9 +592,15 @@ class @Canvas
           @ctx.closePath()
           @ctx.fill()
           @ctx.stroke()
+          @ctx.restore()
         when "path"
+          rotateOrigin = shape.rotateOrigin
+          @hiddenCtx.save()
+          @hiddenCtx.translate rotateOrigin[0], rotateOrigin[1]
+          @hiddenCtx.rotate shape.rotate
+          @hiddenCtx.translate -rotateOrigin[0], -rotateOrigin[1]
           @hiddenCtx.beginPath()
-          @hiddenCtx.fillStyle = "#000000"
+          @hiddenCtx.fillStyle = if shape.closePath then "#000000" else rgba(0,0,0,0)
           @hiddenCtx.strokeStyle = "#000000"
           @hiddenCtx.lineWidth = shape.strokeWidth
           @hiddenCtx.lineCap = shape.strokeCap
@@ -448,15 +611,26 @@ class @Canvas
             shape.path.apply @hiddenCtx, shape.params
           else if shape.params.constructor.name is "Object"
             shape.path.call @hiddenCtx, shape.params
-          @hiddenCtx.fill()
+          @hiddenCtx.closePath() if shape.closePath
+          @hiddenCtx.fill() if shape.fillPath
           @hiddenCtx.stroke()
-          @hiddenCtx.closePath()
+          @hiddenCtx.restore()
           imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
           pix = imgd.data
           shape.isMouseOver = pix[3] is 255
+          @ctx.save()
+          @ctx.translate rotateOrigin[0], rotateOrigin[1]
+          @ctx.rotate shape.rotate
+          @ctx.translate -rotateOrigin[0], -rotateOrigin[1]
           @ctx.beginPath()
-          @ctx.fillStyle = shape.fillColor
-          @ctx.strokeStyle = shape.strokeColor
+          @ctx.fillStyle = if not shape.fillColor.gradient?
+            shape.fillColor
+          else if shape.fillColor.gradient is "linear"
+            @getLinearGradient shape.fillColor.name
+          @ctx.strokeStyle = if not shape.strokeColor.gradient?
+            shape.strokeColor
+          else if shape.strokeColor.gradient is "linear"
+            @getLinearGradient shape.strokeColor.name
           @ctx.lineWidth = shape.strokeWidth
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
@@ -466,39 +640,46 @@ class @Canvas
             shape.path.apply @ctx, shape.params
           else if shape.params.constructor.name is "Object"
             shape.path.call @ctx, shape.params
-          @ctx.fill()
+          @ctx.closePath() if shape.closePath
+          @ctx.fill() if shape.fillPath
           @ctx.stroke()
-          @ctx.closePath()
-        when "plot"
-          @ctx.beginPath()
-          @ctx.strokeStyle = shape.lineColor
-          @ctx.lineWidth = shape.lineWidth
-          pixelsPerXUnit = shape.xScale # the pixels for every `1` on the x axis
-          incrementXPerPixel = 1 / pixelsPerXUnit # the value by which to increment x every pixel
-          pixelsPerYUnit = shape.yScale
-          incrementYPerPixel = 1 / pixelsPerYUnit
-          xStart = shape.x + pixelsPerXUnit * shape.xMin # the absolute x coordinate of the start of the plot
-          xEnd = shape.x + pixelsPerXUnit * shape.xMax
-          yClipTop = shape.y - pixelsPerYUnit * shape.yMax # the absolute y coordinate of where to clip the plot at the top
-          yClipBottom = shape.y - pixelsPerYUnit * shape.yMin
-          @ctx.moveTo xStart, shape.y - (shape.equation x, shape.params) * pixelsPerYUnit
-          for xPix in [xStart...xEnd]
-            x = shape.xMin + (xPix - xStart) / pixelsPerXUnit
-            #console.log x
-            result = shape.equation x, shape.params
-            yPix = shape.y - result * pixelsPerYUnit
-            #console.log yPix
-            #console.log x is result
-            if yClipTop < yPix < yClipBottom
-              @ctx.lineTo xPix, yPix
-            else if yPix < yClipTop
-              @ctx.moveTo xPix * ((yClipTop - yPix) / -yPix), yClipTop
-          @ctx.stroke()
-          @ctx.closePath()
+          @ctx.restore()
         when "arc"
+          rotateOrigin = if shape.rotateOrigin is "center"
+            [shape.x, shape.y]
+          else
+            shape.rotateOrigin
+          @hiddenCtx.save()
+          @hiddenCtx.translate rotateOrigin[0], rotateOrigin[1]
+          @hiddenCtx.rotate shape.rotate
+          @hiddenCtx.translate -rotateOrigin[0], -rotateOrigin[1]
+          @hiddenCtx.beginPath()
+          @hiddenCtx.fillStyle = "#000000"
+          @hiddenCtx.strokeStyle = "#000000"
+          @hiddenCtx.lineWidth = shape.strokeWidth
+          @hiddenCtx.lineCap = shape.strokeCap
+          @hiddenCtx.lineJoin = shape.strokeJoin
+          @hiddenCtx.arc shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false
+          @hiddenCtx.fill()
+          @hiddenCtx.stroke()
+          @hiddenCtx.closePath()
+          @hiddenCtx.restore()
+          imgd = @hiddenCtx.getImageData @cursorPos[0], @cursorPos[1], 1, 1
+          pix = imgd.data
+          shape.isMouseOver = pix[3] is 255
+          @ctx.save()
+          @ctx.translate rotateOrigin[0], rotateOrigin[1]
+          @ctx.rotate shape.rotate
+          @ctx.translate -rotateOrigin[0], -rotateOrigin[1]
           @ctx.beginPath()
-          @ctx.fillStyle = shape.fillColor
-          @ctx.strokeStyle = shape.strokeColor
+          @ctx.fillStyle = if not shape.fillColor.gradient?
+            shape.fillColor
+          else if shape.fillColor.gradient is "linear"
+            @getLinearGradient shape.fillColor.name
+          @ctx.strokeStyle = if not shape.strokeColor.gradient?
+            shape.strokeColor
+          else if shape.strokeColor.gradient is "linear"
+            @getLinearGradient shape.strokeColor.name
           @ctx.lineWidth = shape.strokeWidth
           @ctx.lineCap = shape.strokeCap
           @ctx.lineJoin = shape.strokeJoin
@@ -506,10 +687,38 @@ class @Canvas
           @ctx.fill()
           @ctx.stroke()
           @ctx.closePath()
+          @ctx.restore()
+        when "lowLevel"
+          if Object::toString.call(shape.params) is "[object Array]"
+            shape.operation.apply @ctx, [@canvas].concat shape.params
+          else
+            shape.operation.call @ctx, @canvas, shape.params;
       if shape.isMouseOver and not shape.wasMouseOver
-        callback() for name, callback of shape.events.mousein
+        for callback in shape.events.mousein
+          if callback?
+            if callback::constructor.length is 0
+              callback()
+            else
+              callback
+                canvas:
+                  x: @cursorPos[0]
+                  y: @cursorPos[1]
+                shape:
+                  x: shape.x - @cursorPos[0]
+                  y: shape.y - @cursorPos[1]
       if not shape.isMouseOver and shape.wasMouseOver
-        callback() for name, callback of shape.events.mouseout
+        for callback in shape.events.mouseout
+          if callback?
+            if callback::constructor.length is 0
+              callback()
+            else
+              callback
+                canvas:
+                  x: @cursorPos[0]
+                  y: @cursorPos[1]
+                shape:
+                  x: shape.x - @cursorPos[0]
+                  y: shape.y - @cursorPos[1]
           
   autoDraw: (fps = 30) ->
     @autoDraw.state = on
@@ -546,7 +755,7 @@ class @Canvas
         orig[prop] = @registry[shape][prop]
     timePassed = 0
     rec = ->
-      unless timePassed >= duration
+      if timePassed <= duration
         th = @
         for prop of orig
           if orig[prop].constructor.name is "Object" and orig[prop].rgba?
@@ -571,8 +780,10 @@ class @Canvas
           rec.call th
           timePassed += 1000 / fps
         , 1000 / fps
+      else
+        @registry[shape][prop] = destination[prop]
     rec.call @
-    setTimeout callback, duration
+    setTimeout callback, duration if callback? and duration? and duration > 0
     
   arrayAnimate: (shape, index, destination, duration, easing, callback, fps = 30) ->
     orig = @registry[shape].params[index]
@@ -582,15 +793,17 @@ class @Canvas
       @easing[easing]
     timePassed = 0
     rec = ->
-      unless timePassed >= duration
+      if timePassed <= duration
         th = @
         @registry[shape].params[index] = easing timePassed, orig, destination - orig, duration
         setTimeout ->
           rec.call th
           timePassed += 1000 / fps
         , 1000 / fps
+      else
+        @registry[shape].params[index] = destination
     rec.call @
-    setTimeout callback, duration
+    setTimeout callback, duration if callback? and duration? and duration > 0
   
   objAnimate: (shape, property, destination, duration, easing, callback, fps = 30) ->
     orig = @registry[shape].params[property]
@@ -600,25 +813,130 @@ class @Canvas
       @easing[easing]
     timePassed = 0
     rec = ->
-      unless timePassed >= duration
+      if timePassed <= duration
         th = @
         @registry[shape].params[property] = easing timePassed, orig, destination - orig, duration
         setTimeout ->
           rec.call th
           timePassed += 1000 / fps
         , 1000 / fps
+      else
+        @registry[shape].params[property] = destination
     rec.call @
-    setTimeout callback, duration
+    setTimeout callback, duration if callback? and duration? and duration > 0
   
   moveToBack: (shape) ->
-    _shape = @registry[shape]
-    delete @registry[shape]
-    @registry[shape] = _shape
-    bounceInOut: (t, b, c, d) ->
-      if t < d / 2
-        Canvas::easing.bounceIn(t*2, 0, c, d) * .5 + b
-      else
-        Canvas::easing.bounceOut(t*2-d, 0, c, d) * .5 + c*.5 + b
+    zIndex = @registry[shape].zIndex
+    @zIndecies.splice zIndex, 1
+    @zIndecies.unshift shape
+    for id, index in @zIndecies
+      @registry[id].zIndex = index
+  
+  moveToFront: (shape) ->
+    zIndex = @registry[shape].zIndex
+    @zIndecies.splice zIndex, 1
+    @zIndecies.push shape
+    for id, index in @zIndecies
+      @registry[id].zIndex = index
+  
+  moveBack: (shape) ->
+    zIndex = @registry[shape].zIndex
+    @zIndecies.splice zIndex, 1
+    @zIndecies.splice zIndex - 1, 0, shape
+    for id, index in @zIndecies
+      @registry[id].zIndex = index
   
   get: (shape) ->
     @registry[shape]
+  
+  bindEvent: (type, shape, callback) ->
+    index = @registry[shape].events[type].length
+    @registry[shape].events[type].push callback
+    index
+  
+  removeEvent: (type, shape, event) ->
+    delete @registry[shape].events[type][event]
+  
+  linearGradient: (opts) ->
+    @gradientRegistry.linear[opts.name] =
+      x: opts.x
+      y: opts.y
+      endX: opts.endX
+      endY: opts.endY
+      params: opts.params
+      fn: opts.fn
+  
+  getLinearGradient: (name) ->
+    data = @gradientRegistry.linear[name]
+    gradient = @ctx.createLinearGradient data.x, data.y, data.endX, data.endY
+    if toString.call(data.params) is "[object Array]"
+      data.fn.apply gradient, data.params
+    else
+      data.fn.call gradient, data.params
+    gradient
+    
+  linearGradientAnimate: (name, props, duration, easing, callback, fps = 30) ->
+    easing = if easing? and typeof easing isnt "string"
+      easing
+    else if easing? and typeof easing is "string"
+      @easing[easing]
+    for _prop of props
+      if _prop is "params"
+        if toString.call(props[_prop]) is "[object Array]"
+          for _item, _index in props[_prop]
+            (=>
+              prop = _prop
+              item = _item
+              index = _index
+              timePassed = 0
+              orig = @gradientRegistry.linear[name].params[index]
+              rec = =>
+                if timePassed <= duration
+                  @gradientRegistry.linear[name].params[index] = easing timePassed, orig, item - orig, duration
+                  setTimeout =>
+                    rec()
+                    timePassed += 1000 / fps
+                  , 1000 / fps
+                else
+                  @gradientRegistry.linear[name].params[index] = item
+              rec()
+            )()
+        else
+          for _item, _index of props[prop]
+            (=>
+              prop = _prop
+              item = _item
+              index = _index
+              timePassed = 0
+              orig = @gradientRegistry.linear[name].params[index]
+              rec = =>
+                if timePassed <= duration
+                  @gradientRegistry.linear[name].params[index] = easing timePassed, orig, item - orig, duration
+                  setTimeout =>
+                    rec()
+                    timePassed += 1000 / fps
+                  , 1000 / fps
+                else
+                  @gradientRegistry.linear[name].params[index] = item
+              rec()
+            )()
+      else
+        (=>
+          prop = _prop
+          timePassed = 0
+          orig = @gradientRegistry.linear[name][prop]
+          rec = =>
+            if timePassed <= duration
+              @gradientRegistry.linear[name][prop] = easing timePassed, orig, props[prop] - orig, duration
+              setTimeout =>
+                rec()
+                timePassed += 1000 / fps
+              , 1000 / fps
+            else
+              @gradientRegistry.linear[name][prop] = props[prop]
+          rec()
+        )()
+    setTimeout callback, duration if callback? and duration? and duration > 0
+  
+  gradientRegistry:
+    linear: {}

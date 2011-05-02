@@ -138,6 +138,9 @@ to make it relative to the cursor
 
 Plots
 -----
+**NOTE: The plot feature has been disabled indefinitely because of poor performance and a bug in gecko-based
+browsers. It may be reenabled in the future.**
+
 An interesting feature of euclid that you're unlikely to find elsewhere is the "plot" shape type.
 The plot shape type creates a graph of a mathematical equation. As always, it's animatable.
 
@@ -171,9 +174,63 @@ You can also animate the plot using the params just as you would with a path.
 Mouse Events
 ------------
 Euclid implements experimental mouse event support. Currently the only supported events are click, mousein and mouseout
-These events work on all shapes except plots (for now). The API for binding events is currently very mediocre
-and needs to be refined, but you can bind an event to a shape like this:
+These events work on all shapes except plots (for now). To bind an event, use the `bindEvent` method (what a concept!)
 
-    canvas.get(%shape_id%).events.%event_type%.%event_identifier% = function() {
-        // event code here
-    };
+    var eventListener = canvas.bindEvent("%event-name%", "%shape%", function(event) {
+      // do stuff
+    });
+
+To remove an event, use `removeEvent` (again, what a concept!)
+
+    canvas.removeEvent("%event-name", "%shape%", eventListener);
+
+There is also a simplified event object for shapes, it only has 4 pieces of data, `event.shape.x`,
+`event.shape.y`, `event.canvas.x` and `event.canvas.y`. The canvas data is the position of the click relative
+to the entire canvas, the shape coordinates are relative the the x-y coordinates of the shape.
+
+Low-Level Interaction
+---------------------
+If you need to do pixel-level manipulation of the canvas (say, to apply a grayscale filter), you can use the
+`lowLevel` method. It only accepts 2 options, `operation` and `params` and can't accept mouse event (if you need 
+them to, just draw a transparent shape over them). Like in paths, the `params` option is for animation and
+works almost the same.
+
+Gradients
+---------
+So far there is only support for linear gradients, but they are animatable. Like many other constructs in Euclid,
+gradients are defined by a function and animatable parameters. To create a linear gradient, use the `linearGradient`
+method:
+
+    canvas.linearGradient({
+      name: "gradientName",
+      x: 0,
+      y: 0,
+      endX: 200,
+      endY: 0,
+      params: [0, 0, 0, 255, 255, 255],
+      fn: function(r1, b1, g1, r2, b2, g2) {
+        this.addColorStop(0, rgb(r1, b1, g1));
+        this.addColorStop(1, rgb(r2, b2, g2));
+      }
+    });
+
+To set a gradient as a fillColor, use an object construct like this:
+
+    canvas.recatangle("box", {
+      x: 0,
+      y: 0,
+      height: 200,
+      width: 200,
+      fillColor: {
+        gradient: "linear",
+        name: "gradientName"
+      }
+    });
+
+This attaches the previously created gradient to the shape. To animate a gradient, use the `linearGradientAnimate` method:
+
+    canvas.linearGradientAnimate("gradientName", {
+      params: [255, 0, 0, 0, 255, 0]
+    });
+
+That's all there is to it!

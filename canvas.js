@@ -2,16 +2,16 @@
   /*
     Euclid (Canvas Library)
     Abstracts canvas shapes into easiliy manipulatable objects
-
+  
     Copyright 2011 Adrian Sinclair (adrusi)
-
+    
     Easing functions modified from http://developer.yahoo.com/yui/docs/Easing.js.html BSD license
   */  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
   this.rgba = function(r, g, b, a) {
-    return "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+    return "rgba(" + (Math.round(r)) + ", " + (Math.round(g)) + ", " + (Math.round(b)) + ", " + a + ")";
   };
   this.rgb = function(r, g, b) {
-    return "rgba(" + r + ", " + g + ", " + b + ", 1)";
+    return "rgba(" + (Math.round(r)) + ", " + (Math.round(g)) + ", " + (Math.round(b)) + ", 1)";
   };
   this.hex = function(value) {
     var arr, digits;
@@ -23,8 +23,8 @@
   this.Canvas = (function() {
     function Canvas() {
       var args, canvas, elem, height, prop, props, width;
-      args = Array.prototype.slice.call(arguments, 0);
-      if ((args[0] != null) && args[0] instanceof HTMLElement) {
+      args = Array.prototype.slice.call(arguments);
+      if ((args[0] != null) && (args[0].nodeType != null)) {
         elem = args[0];
       } else if ((args[0] != null) && typeof args[0] === "string") {
         elem = document.getElementById(args[0]);
@@ -38,7 +38,6 @@
           props[prop] = args[0][prop];
         }
         elem = props.element instanceof HTMLElement ? props.element : document.getElementById(props.element);
-        console.log(elem);
         width = props.width;
         height = props.height;
       } else if (typeof args[0] === "number" || !(args[0] != null)) {
@@ -58,29 +57,130 @@
       this.hiddenCanvas.height = height != null ? height : 200;
       this.cursorPos = [0, 0];
       this.canvas.addEventListener("mousemove", __bind(function(event) {
-        return this.cursorPos = [event.offsetX, event.offsetY];
-      }, this));
-      this.canvas.addEventListener("click", __bind(function(event) {
-        var callback, id, name, shape, _ref, _results;
+        var callback, cursorPos, id, shape, _ref, _results;
+        this.cursorPos = [event.layerX, event.layerY];
+        cursorPos = this.cursorPos;
         _ref = this.registry;
         _results = [];
         for (id in _ref) {
           shape = _ref[id];
           _results.push((function() {
-            var _ref, _results;
+            var _i, _len, _ref2, _results2;
             if (shape.isMouseOver) {
-              _ref = shape.events.click;
-              _results = [];
-              for (name in _ref) {
-                callback = _ref[name];
-                _results.push(callback());
+              _ref2 = shape.events.mousemove;
+              _results2 = [];
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                callback = _ref2[_i];
+                _results2.push(callback != null ? callback.prototype.constructor.length === 0 ? callback() : callback({
+                  canvas: {
+                    x: cursorPos[0],
+                    y: cursorPos[1]
+                  },
+                  shape: {
+                    x: shape.x - cursorPos[0],
+                    y: shape.y - cursorPos[1]
+                  }
+                }) : void 0);
               }
-              return _results;
+              return _results2;
             }
           })());
         }
         return _results;
-      }, this));
+      }, this), false);
+      this.canvas.addEventListener("click", __bind(function(event) {
+        var callback, cursorPos, id, shape, _ref, _results;
+        cursorPos = this.cursorPos;
+        _ref = this.registry;
+        _results = [];
+        for (id in _ref) {
+          shape = _ref[id];
+          _results.push((function() {
+            var _i, _len, _ref2, _results2;
+            if (shape.isMouseOver) {
+              _ref2 = shape.events.click;
+              _results2 = [];
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                callback = _ref2[_i];
+                _results2.push(callback != null ? callback.prototype.constructor.length === 0 ? callback() : callback({
+                  canvas: {
+                    x: cursorPos[0],
+                    y: cursorPos[1]
+                  },
+                  shape: {
+                    x: shape.x - cursorPos[0],
+                    y: shape.y - cursorPos[1]
+                  }
+                }) : void 0);
+              }
+              return _results2;
+            }
+          })());
+        }
+        return _results;
+      }, this), false);
+      this.canvas.addEventListener("mousedown", __bind(function(event) {
+        var callback, cursorPos, id, shape, _ref, _results;
+        cursorPos = this.cursorPos;
+        _ref = this.registry;
+        _results = [];
+        for (id in _ref) {
+          shape = _ref[id];
+          _results.push((function() {
+            var _i, _len, _ref2, _results2;
+            if (shape.isMouseOver) {
+              _ref2 = shape.events.mousedown;
+              _results2 = [];
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                callback = _ref2[_i];
+                _results2.push(callback != null ? callback.prototype.constructor.length === 0 ? callback() : callback({
+                  canvas: {
+                    x: cursorPos[0],
+                    y: cursorPos[1]
+                  },
+                  shape: {
+                    x: cursorPos[0] - shape.x,
+                    y: cursorPos[1] - shape.y
+                  }
+                }) : void 0);
+              }
+              return _results2;
+            }
+          })());
+        }
+        return _results;
+      }, this), false);
+      this.canvas.addEventListener("mouseup", __bind(function(event) {
+        var callback, cursorPos, id, shape, _ref, _results;
+        cursorPos = this.cursorPos;
+        _ref = this.registry;
+        _results = [];
+        for (id in _ref) {
+          shape = _ref[id];
+          _results.push((function() {
+            var _i, _len, _ref2, _results2;
+            if (shape.isMouseOver) {
+              _ref2 = shape.events.mouseup;
+              _results2 = [];
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                callback = _ref2[_i];
+                _results2.push(callback != null ? callback.prototype.constructor.length === 0 ? callback() : callback({
+                  canvas: {
+                    x: cursorPos[0],
+                    y: cursorPos[1]
+                  },
+                  shape: {
+                    x: shape.x - cursorPos[0],
+                    y: shape.y - cursorPos[1]
+                  }
+                }) : void 0);
+              }
+              return _results2;
+            }
+          })());
+        }
+        return _results;
+      }, this), false);
       if ((args[0] != null) && typeof args[0] === "number") {
         this.canvas.width = args[0];
         this.canvas.height = (args[1] != null) && typeof args[1] === "number" ? args[1] : args[0];
@@ -175,6 +275,7 @@
       this.autoDraw.state = true;
     }
     Canvas.prototype.registry = {};
+    Canvas.prototype.zIndecies = [];
     Canvas.prototype.easing = {
       linear: function(t, b, c, d) {
         return c * t / d + b;
@@ -200,11 +301,10 @@
       },
       easeInOutStrong: function(t, b, c, d) {
         if ((t /= d / 2) < 1) {
-          c / 2 * t * t * t * t + b;
+          return c / 2 * t * t * t * t + b;
         } else {
-          -1 * c / 2 * ((t -= 2) * t * t * t - 2) + b;
+          return -1 * c / 2 * ((t -= 2) * t * t * t - 2) + b;
         }
-        return console.log("foo");
       },
       elasticIn: function(t, b, c, d, a, p) {
         return (function() {
@@ -219,7 +319,7 @@
         }
 
       	if (!a || a < Math.abs(c)) {
-          a = c;
+          a = c; 
           var s = p/4;
         }
     	  else {
@@ -267,7 +367,7 @@
         }
 
       	if ( !a || a < Math.abs(c) ) {
-          a = c;
+          a = c; 
           var s = p/4;
         }
       	else {
@@ -324,6 +424,7 @@
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
         type: "rectangle",
+        zIndex: this.zIndecies.length,
         x: 0,
         y: 0,
         width: 0,
@@ -333,10 +434,15 @@
         strokeWidth: 0,
         strokeCap: "butt",
         strokeJoin: "miter",
+        rotate: 0,
+        rotateOrigin: "center",
         events: {
-          mousein: {},
-          mouseout: {},
-          click: {}
+          mousein: [],
+          mouseout: [],
+          click: [],
+          mousemove: [],
+          mouseup: [],
+          mousedown: []
         }
       } : this.registry[id];
       _opts = {};
@@ -344,12 +450,16 @@
         _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
       }
       options = _opts;
-      return this.registry[id] = options;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
     };
     Canvas.prototype.circle = function(id, options) {
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
         type: "circle",
+        zIndex: this.zIndecies.length,
         x: 0,
         y: 0,
         radius: 0,
@@ -358,10 +468,15 @@
         strokeWidth: 0,
         strokeCap: "butt",
         strokeJoin: "miter",
+        rotate: 0,
+        rotateOrigin: "center",
         events: {
-          mousein: {},
-          mouseout: {},
-          click: {}
+          mousein: [],
+          mouseout: [],
+          click: [],
+          mousemove: [],
+          mouseup: [],
+          mousedown: []
         }
       } : this.registry[id];
       _opts = {};
@@ -369,12 +484,16 @@
         _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
       }
       options = _opts;
-      return this.registry[id] = options;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
     };
     Canvas.prototype.path = function(id, options) {
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
         type: "path",
+        zIndex: this.zIndecies.length,
         x: 0,
         y: 0,
         path: function() {},
@@ -384,11 +503,18 @@
         strokeWidth: 0,
         strokeCap: "butt",
         strokeJoin: "miter",
+        fillPath: true,
+        closePath: true,
         isMouseOver: false,
+        rotate: 0,
+        rotateOrigin: "center",
         events: {
-          mousein: {},
-          mouseout: {},
-          click: {}
+          mousein: [],
+          mouseout: [],
+          click: [],
+          mousemove: [],
+          mouseup: [],
+          mousedown: []
         }
       } : this.registry[id];
       _opts = {};
@@ -396,12 +522,16 @@
         _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
       }
       options = _opts;
-      return this.registry[id] = options;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
     };
     Canvas.prototype.plot = function(id, options) {
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
         type: "plot",
+        zIndex: this.zIndecies.length,
         x: 0,
         y: 0,
         xMax: 0,
@@ -417,10 +547,15 @@
         lineColor: rgba(0, 0, 0, 0),
         lineWidth: 0,
         isMouseOver: false,
+        rotate: 0,
+        rotateOrigin: "center",
         events: {
-          mousein: {},
-          mouseout: {},
-          click: {}
+          mousein: [],
+          mouseout: [],
+          click: [],
+          mousemove: [],
+          mouseup: [],
+          mousedown: []
         }
       } : this.registry[id];
       _opts = {};
@@ -428,12 +563,16 @@
         _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
       }
       options = _opts;
-      return this.registry[id] = options;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
     };
     Canvas.prototype.arc = function(id, options) {
       var $default, defaults, _opts;
       defaults = !(this.registry[id] != null) ? {
         type: "arc",
+        zIndex: this.zIndecies.length,
         x: 0,
         y: 0,
         radius: 0,
@@ -446,10 +585,15 @@
         strokeCap: "butt",
         strokeJoin: "miter",
         isMouseOver: false,
+        rotate: 0,
+        rotateOrigin: "center",
         events: {
-          mousein: {},
-          mouseout: {},
-          click: {}
+          mousein: [],
+          mouseout: [],
+          click: [],
+          mousemove: [],
+          mouseup: [],
+          mousedown: []
         }
       } : this.registry[id];
       _opts = {};
@@ -457,19 +601,46 @@
         _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
       }
       options = _opts;
-      return this.registry[id] = options;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
+    };
+    Canvas.prototype.lowLevel = function(id, options) {
+      var $default, defaults, _opts;
+      defaults = !(this.registry[id] != null) ? {
+        type: "lowLevel",
+        zIndex: this.zIndecies.length,
+        operation: function(canvas, params) {},
+        params: []
+      } : this.registry[id];
+      _opts = {};
+      for ($default in defaults) {
+        _opts[$default] = (options[$default] != null) && $default !== "type" ? options[$default] : defaults[$default];
+      }
+      options = _opts;
+      this.registry[id] = options;
+      if (!this.zIndecies[options.zIndex]) {
+        return this.zIndecies.push(id);
+      }
     };
     Canvas.prototype.draw = function() {
-      var callback, id, imgd, incrementXPerPixel, incrementYPerPixel, name, pix, pixelsPerXUnit, pixelsPerYUnit, result, shape, x, xEnd, xPix, xStart, yClipBottom, yClipTop, yPix, _ref, _ref2, _results;
+      var callback, id, imgd, pix, rotateOrigin, shape, _i, _j, _len, _len2, _ref, _ref2, _results;
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      _ref = this.registry;
+      _ref = this.zIndecies;
       _results = [];
-      for (id in _ref) {
-        shape = _ref[id];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        id = _ref[_i];
+        shape = this.registry[id];
         this.hiddenCtx.clearRect(0, 0, this.hiddenCanvas.width, this.hiddenCanvas.height);
         this.registry[id].wasMouseOver = shape.isMouseOver;
         switch (shape.type) {
           case "rectangle":
+            rotateOrigin = shape.rotateOrigin === "center" ? [shape.x + shape.width / 2, shape.y + shape.height / 2] : shape.rotateOrigin;
+            this.hiddenCtx.save();
+            this.hiddenCtx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.hiddenCtx.rotate(shape.rotate);
+            this.hiddenCtx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.hiddenCtx.beginPath();
             this.hiddenCtx.fillStyle = "#000000";
             this.hiddenCtx.strokeStyle = "#000000";
@@ -480,12 +651,17 @@
             this.hiddenCtx.closePath();
             this.hiddenCtx.fill();
             this.hiddenCtx.stroke();
+            this.hiddenCtx.restore();
             imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
             pix = imgd.data;
             shape.isMouseOver = pix[3] === 255;
+            this.ctx.save();
+            this.ctx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.ctx.rotate(shape.rotate);
+            this.ctx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.ctx.beginPath();
-            this.ctx.fillStyle = shape.fillColor;
-            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.fillStyle = !(shape.fillColor.gradient != null) ? shape.fillColor : shape.fillColor.gradient === "linear" ? this.getLinearGradient(shape.fillColor.name) : void 0;
+            this.ctx.strokeStyle = !(shape.strokeColor.gradient != null) ? shape.strokeColor : shape.strokeColor.gradient === "linear" ? this.getLinearGradient(shape.strokeColor.name) : void 0;
             this.ctx.lineWidth = shape.strokeWidth;
             this.ctx.lineCap = shape.strokeCap;
             this.ctx.lineJoin = shape.strokeJoin;
@@ -493,8 +669,14 @@
             this.ctx.closePath();
             this.ctx.fill();
             this.ctx.stroke();
+            this.ctx.restore();
             break;
           case "circle":
+            rotateOrigin = shape.rotateOrigin === "center" ? [shape.x, shape.y] : shape.rotateOrigin;
+            this.hiddenCtx.save();
+            this.hiddenCtx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.hiddenCtx.rotate(shape.rotate);
+            this.hiddenCtx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.hiddenCtx.beginPath();
             this.hiddenCtx.fillStyle = "#000000";
             this.hiddenCtx.strokeStyle = "#000000";
@@ -505,12 +687,17 @@
             this.hiddenCtx.closePath();
             this.hiddenCtx.fill();
             this.hiddenCtx.stroke();
+            this.hiddenCtx.restore();
             imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
             pix = imgd.data;
             shape.isMouseOver = pix[3] === 255;
+            this.ctx.save();
+            this.ctx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.ctx.rotate(shape.rotate);
+            this.ctx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.ctx.beginPath();
-            this.ctx.fillStyle = shape.fillColor;
-            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.fillStyle = !(shape.fillColor.gradient != null) ? shape.fillColor : shape.fillColor.gradient === "linear" ? this.getLinearGradient(shape.fillColor.name) : void 0;
+            this.ctx.strokeStyle = !(shape.strokeColor.gradient != null) ? shape.strokeColor : shape.strokeColor.gradient === "linear" ? this.getLinearGradient(shape.strokeColor.name) : void 0;
             this.ctx.lineWidth = shape.strokeWidth;
             this.ctx.lineCap = shape.strokeCap;
             this.ctx.lineJoin = shape.strokeJoin;
@@ -518,10 +705,16 @@
             this.ctx.closePath();
             this.ctx.fill();
             this.ctx.stroke();
+            this.ctx.restore();
             break;
           case "path":
+            rotateOrigin = shape.rotateOrigin;
+            this.hiddenCtx.save();
+            this.hiddenCtx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.hiddenCtx.rotate(shape.rotate);
+            this.hiddenCtx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.hiddenCtx.beginPath();
-            this.hiddenCtx.fillStyle = "#000000";
+            this.hiddenCtx.fillStyle = shape.closePath ? "#000000" : rgba(0, 0, 0, 0);
             this.hiddenCtx.strokeStyle = "#000000";
             this.hiddenCtx.lineWidth = shape.strokeWidth;
             this.hiddenCtx.lineCap = shape.strokeCap;
@@ -536,15 +729,24 @@
             } else if (shape.params.constructor.name === "Object") {
               shape.path.call(this.hiddenCtx, shape.params);
             }
-            this.hiddenCtx.fill();
+            if (shape.closePath) {
+              this.hiddenCtx.closePath();
+            }
+            if (shape.fillPath) {
+              this.hiddenCtx.fill();
+            }
             this.hiddenCtx.stroke();
-            this.hiddenCtx.closePath();
+            this.hiddenCtx.restore();
             imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
             pix = imgd.data;
             shape.isMouseOver = pix[3] === 255;
+            this.ctx.save();
+            this.ctx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.ctx.rotate(shape.rotate);
+            this.ctx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.ctx.beginPath();
-            this.ctx.fillStyle = shape.fillColor;
-            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.fillStyle = !(shape.fillColor.gradient != null) ? shape.fillColor : shape.fillColor.gradient === "linear" ? this.getLinearGradient(shape.fillColor.name) : void 0;
+            this.ctx.strokeStyle = !(shape.strokeColor.gradient != null) ? shape.strokeColor : shape.strokeColor.gradient === "linear" ? this.getLinearGradient(shape.strokeColor.name) : void 0;
             this.ctx.lineWidth = shape.strokeWidth;
             this.ctx.lineCap = shape.strokeCap;
             this.ctx.lineJoin = shape.strokeJoin;
@@ -558,40 +760,42 @@
             } else if (shape.params.constructor.name === "Object") {
               shape.path.call(this.ctx, shape.params);
             }
-            this.ctx.fill();
-            this.ctx.stroke();
-            this.ctx.closePath();
-            break;
-          case "plot":
-            this.ctx.beginPath();
-            this.ctx.strokeStyle = shape.lineColor;
-            this.ctx.lineWidth = shape.lineWidth;
-            pixelsPerXUnit = shape.xScale;
-            incrementXPerPixel = 1 / pixelsPerXUnit;
-            pixelsPerYUnit = shape.yScale;
-            incrementYPerPixel = 1 / pixelsPerYUnit;
-            xStart = shape.x + pixelsPerXUnit * shape.xMin;
-            xEnd = shape.x + pixelsPerXUnit * shape.xMax;
-            yClipTop = shape.y - pixelsPerYUnit * shape.yMax;
-            yClipBottom = shape.y - pixelsPerYUnit * shape.yMin;
-            this.ctx.moveTo(xStart, shape.y - (shape.equation(x, shape.params)) * pixelsPerYUnit);
-            for (xPix = xStart; (xStart <= xEnd ? xPix < xEnd : xPix > xEnd); (xStart <= xEnd ? xPix += 1 : xPix -= 1)) {
-              x = shape.xMin + (xPix - xStart) / pixelsPerXUnit;
-              result = shape.equation(x, shape.params);
-              yPix = shape.y - result * pixelsPerYUnit;
-              if ((yClipTop < yPix && yPix < yClipBottom)) {
-                this.ctx.lineTo(xPix, yPix);
-              } else if (yPix < yClipTop) {
-                this.ctx.moveTo(xPix * ((yClipTop - yPix) / -yPix), yClipTop);
-              }
+            if (shape.closePath) {
+              this.ctx.closePath();
+            }
+            if (shape.fillPath) {
+              this.ctx.fill();
             }
             this.ctx.stroke();
-            this.ctx.closePath();
+            this.ctx.restore();
             break;
           case "arc":
+            rotateOrigin = shape.rotateOrigin === "center" ? [shape.x, shape.y] : shape.rotateOrigin;
+            this.hiddenCtx.save();
+            this.hiddenCtx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.hiddenCtx.rotate(shape.rotate);
+            this.hiddenCtx.translate(-rotateOrigin[0], -rotateOrigin[1]);
+            this.hiddenCtx.beginPath();
+            this.hiddenCtx.fillStyle = "#000000";
+            this.hiddenCtx.strokeStyle = "#000000";
+            this.hiddenCtx.lineWidth = shape.strokeWidth;
+            this.hiddenCtx.lineCap = shape.strokeCap;
+            this.hiddenCtx.lineJoin = shape.strokeJoin;
+            this.hiddenCtx.arc(shape.x, shape.y, shape.radius, shape.start, shape.arcLength, false);
+            this.hiddenCtx.fill();
+            this.hiddenCtx.stroke();
+            this.hiddenCtx.closePath();
+            this.hiddenCtx.restore();
+            imgd = this.hiddenCtx.getImageData(this.cursorPos[0], this.cursorPos[1], 1, 1);
+            pix = imgd.data;
+            shape.isMouseOver = pix[3] === 255;
+            this.ctx.save();
+            this.ctx.translate(rotateOrigin[0], rotateOrigin[1]);
+            this.ctx.rotate(shape.rotate);
+            this.ctx.translate(-rotateOrigin[0], -rotateOrigin[1]);
             this.ctx.beginPath();
-            this.ctx.fillStyle = shape.fillColor;
-            this.ctx.strokeStyle = shape.strokeColor;
+            this.ctx.fillStyle = !(shape.fillColor.gradient != null) ? shape.fillColor : shape.fillColor.gradient === "linear" ? this.getLinearGradient(shape.fillColor.name) : void 0;
+            this.ctx.strokeStyle = !(shape.strokeColor.gradient != null) ? shape.strokeColor : shape.strokeColor.gradient === "linear" ? this.getLinearGradient(shape.strokeColor.name) : void 0;
             this.ctx.lineWidth = shape.strokeWidth;
             this.ctx.lineCap = shape.strokeCap;
             this.ctx.lineJoin = shape.strokeJoin;
@@ -599,26 +803,58 @@
             this.ctx.fill();
             this.ctx.stroke();
             this.ctx.closePath();
+            this.ctx.restore();
+            break;
+          case "lowLevel":
+            if (Object.prototype.toString.call(shape.params) === "[object Array]") {
+              shape.operation.apply(this.ctx, [this.canvas].concat(shape.params));
+            } else {
+              shape.operation.call(this.ctx, this.canvas, shape.params);
+            }
         }
         if (shape.isMouseOver && !shape.wasMouseOver) {
           _ref2 = shape.events.mousein;
-          for (name in _ref2) {
-            callback = _ref2[name];
-            callback();
+          for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+            callback = _ref2[_j];
+            if (callback != null) {
+              if (callback.prototype.constructor.length === 0) {
+                callback();
+              } else {
+                callback({
+                  canvas: {
+                    x: this.cursorPos[0],
+                    y: this.cursorPos[1]
+                  },
+                  shape: {
+                    x: shape.x - this.cursorPos[0],
+                    y: shape.y - this.cursorPos[1]
+                  }
+                });
+              }
+            }
           }
         }
         _results.push((function() {
-          var _ref, _results;
+          var _k, _len3, _ref3, _results2;
           if (!shape.isMouseOver && shape.wasMouseOver) {
-            _ref = shape.events.mouseout;
-            _results = [];
-            for (name in _ref) {
-              callback = _ref[name];
-              _results.push(callback());
+            _ref3 = shape.events.mouseout;
+            _results2 = [];
+            for (_k = 0, _len3 = _ref3.length; _k < _len3; _k++) {
+              callback = _ref3[_k];
+              _results2.push(callback != null ? callback.prototype.constructor.length === 0 ? callback() : callback({
+                canvas: {
+                  x: this.cursorPos[0],
+                  y: this.cursorPos[1]
+                },
+                shape: {
+                  x: shape.x - this.cursorPos[0],
+                  y: shape.y - this.cursorPos[1]
+                }
+              }) : void 0);
             }
-            return _results;
+            return _results2;
           }
-        })());
+        }).call(this));
       }
       return _results;
     };
@@ -675,8 +911,8 @@
       }
       timePassed = 0;
       rec = function() {
-        var alpha, blue, final, green, i, key, prop, red, th, v, value, _len, _ref, _ref2;
-        if (!(timePassed >= duration)) {
+        var alpha, blue, final, green, i, key, prop, red, th, v, value, _len3, _ref3, _ref4;
+        if (timePassed <= duration) {
           th = this;
           for (prop in orig) {
             if (orig[prop].constructor.name === "Object" && (orig[prop].rgba != null)) {
@@ -687,17 +923,17 @@
               this.registry[shape][prop] = rgba(Math.round(red), Math.round(green), Math.round(blue), alpha);
             } else if (orig[prop].constructor.name === "Object") {
               final = {};
-              _ref = orig[prop];
-              for (key in _ref) {
-                value = _ref[key];
+              _ref3 = orig[prop];
+              for (key in _ref3) {
+                value = _ref3[key];
                 final[key] = easing(timePassed, orig[prop][key], destination[prop][key] - orig[prop][key], duration);
               }
               this.registry[shape][prop] = final;
             } else if (orig[prop].constructor.name === "Array") {
               final = [];
-              _ref2 = orig[prop];
-              for (i = 0, _len = _ref2.length; i < _len; i++) {
-                v = _ref2[i];
+              _ref4 = orig[prop];
+              for (i = 0, _len3 = _ref4.length; i < _len3; i++) {
+                v = _ref4[i];
                 final.push(easing(timePassed, orig[prop][i], destination[prop][i] - orig[prop][i], duration));
               }
               this.registry[shape][prop] = final;
@@ -709,10 +945,14 @@
             rec.call(th);
             return timePassed += 1000 / fps;
           }, 1000 / fps);
+        } else {
+          return this.registry[shape][prop] = destination[prop];
         }
       };
       rec.call(this);
-      return setTimeout(callback, duration);
+      if ((callback != null) && (duration != null) && duration > 0) {
+        return setTimeout(callback, duration);
+      }
     };
     Canvas.prototype.arrayAnimate = function(shape, index, destination, duration, easing, callback, fps) {
       var orig, rec, timePassed;
@@ -724,17 +964,21 @@
       timePassed = 0;
       rec = function() {
         var th;
-        if (!(timePassed >= duration)) {
+        if (timePassed <= duration) {
           th = this;
           this.registry[shape].params[index] = easing(timePassed, orig, destination - orig, duration);
           return setTimeout(function() {
             rec.call(th);
             return timePassed += 1000 / fps;
           }, 1000 / fps);
+        } else {
+          return this.registry[shape].params[index] = destination;
         }
       };
       rec.call(this);
-      return setTimeout(callback, duration);
+      if ((callback != null) && (duration != null) && duration > 0) {
+        return setTimeout(callback, duration);
+      }
     };
     Canvas.prototype.objAnimate = function(shape, property, destination, duration, easing, callback, fps) {
       var orig, rec, timePassed;
@@ -746,35 +990,182 @@
       timePassed = 0;
       rec = function() {
         var th;
-        if (!(timePassed >= duration)) {
+        if (timePassed <= duration) {
           th = this;
           this.registry[shape].params[property] = easing(timePassed, orig, destination - orig, duration);
           return setTimeout(function() {
             rec.call(th);
             return timePassed += 1000 / fps;
           }, 1000 / fps);
+        } else {
+          return this.registry[shape].params[property] = destination;
         }
       };
       rec.call(this);
-      return setTimeout(callback, duration);
+      if ((callback != null) && (duration != null) && duration > 0) {
+        return setTimeout(callback, duration);
+      }
     };
     Canvas.prototype.moveToBack = function(shape) {
-      var _shape;
-      _shape = this.registry[shape];
-      delete this.registry[shape];
-      this.registry[shape] = _shape;
-      return {
-        bounceInOut: function(t, b, c, d) {
-          if (t < d / 2) {
-            return Canvas.prototype.easing.bounceIn(t * 2, 0, c, d) * .5 + b;
-          } else {
-            return Canvas.prototype.easing.bounceOut(t * 2 - d, 0, c, d) * .5 + c * .5 + b;
-          }
-        }
-      };
+      var id, index, zIndex, _len, _ref, _results;
+      zIndex = this.registry[shape].zIndex;
+      this.zIndecies.splice(zIndex, 1);
+      this.zIndecies.unshift(shape);
+      _ref = this.zIndecies;
+      _results = [];
+      for (index = 0, _len = _ref.length; index < _len; index++) {
+        id = _ref[index];
+        _results.push(this.registry[id].zIndex = index);
+      }
+      return _results;
+    };
+    Canvas.prototype.moveToFront = function(shape) {
+      var id, index, zIndex, _len, _ref, _results;
+      zIndex = this.registry[shape].zIndex;
+      this.zIndecies.splice(zIndex, 1);
+      this.zIndecies.push(shape);
+      _ref = this.zIndecies;
+      _results = [];
+      for (index = 0, _len = _ref.length; index < _len; index++) {
+        id = _ref[index];
+        _results.push(this.registry[id].zIndex = index);
+      }
+      return _results;
+    };
+    Canvas.prototype.moveBack = function(shape) {
+      var id, index, zIndex, _len, _ref, _results;
+      zIndex = this.registry[shape].zIndex;
+      this.zIndecies.splice(zIndex, 1);
+      this.zIndecies.splice(zIndex - 1, 0, shape);
+      _ref = this.zIndecies;
+      _results = [];
+      for (index = 0, _len = _ref.length; index < _len; index++) {
+        id = _ref[index];
+        _results.push(this.registry[id].zIndex = index);
+      }
+      return _results;
     };
     Canvas.prototype.get = function(shape) {
       return this.registry[shape];
+    };
+    Canvas.prototype.bindEvent = function(type, shape, callback) {
+      var index;
+      index = this.registry[shape].events[type].length;
+      this.registry[shape].events[type].push(callback);
+      return index;
+    };
+    Canvas.prototype.removeEvent = function(type, shape, event) {
+      return delete this.registry[shape].events[type][event];
+    };
+    Canvas.prototype.linearGradient = function(opts) {
+      return this.gradientRegistry.linear[opts.name] = {
+        x: opts.x,
+        y: opts.y,
+        endX: opts.endX,
+        endY: opts.endY,
+        params: opts.params,
+        fn: opts.fn
+      };
+    };
+    Canvas.prototype.getLinearGradient = function(name) {
+      var data, gradient;
+      data = this.gradientRegistry.linear[name];
+      gradient = this.ctx.createLinearGradient(data.x, data.y, data.endX, data.endY);
+      if (toString.call(data.params) === "[object Array]") {
+        data.fn.apply(gradient, data.params);
+      } else {
+        data.fn.call(gradient, data.params);
+      }
+      return gradient;
+    };
+    Canvas.prototype.linearGradientAnimate = function(name, props, duration, easing, callback, fps) {
+      var _fn, _fn2, _index, _item, _len, _prop, _ref, _ref2;
+      if (fps == null) {
+        fps = 30;
+      }
+      easing = (easing != null) && typeof easing !== "string" ? easing : (easing != null) && typeof easing === "string" ? this.easing[easing] : void 0;
+      for (_prop in props) {
+        if (_prop === "params") {
+          if (toString.call(props[_prop]) === "[object Array]") {
+            _ref = props[_prop];
+            _fn = __bind(function() {
+              var index, item, orig, prop, rec, timePassed;
+              prop = _prop;
+              item = _item;
+              index = _index;
+              timePassed = 0;
+              orig = this.gradientRegistry.linear[name].params[index];
+              rec = __bind(function() {
+                if (timePassed <= duration) {
+                  this.gradientRegistry.linear[name].params[index] = easing(timePassed, orig, item - orig, duration);
+                  return setTimeout(__bind(function() {
+                    rec();
+                    return timePassed += 1000 / fps;
+                  }, this), 1000 / fps);
+                } else {
+                  return this.gradientRegistry.linear[name].params[index] = item;
+                }
+              }, this);
+              return rec();
+            }, this);
+            for (_index = 0, _len = _ref.length; _index < _len; _index++) {
+              _item = _ref[_index];
+              _fn();
+            }
+          } else {
+            _ref2 = props[prop];
+            _fn2 = __bind(function() {
+              var index, item, orig, prop, rec, timePassed;
+              prop = _prop;
+              item = _item;
+              index = _index;
+              timePassed = 0;
+              orig = this.gradientRegistry.linear[name].params[index];
+              rec = __bind(function() {
+                if (timePassed <= duration) {
+                  this.gradientRegistry.linear[name].params[index] = easing(timePassed, orig, item - orig, duration);
+                  return setTimeout(__bind(function() {
+                    rec();
+                    return timePassed += 1000 / fps;
+                  }, this), 1000 / fps);
+                } else {
+                  return this.gradientRegistry.linear[name].params[index] = item;
+                }
+              }, this);
+              return rec();
+            }, this);
+            for (_item in _ref2) {
+              _index = _ref2[_item];
+              _fn2();
+            }
+          }
+        } else {
+          (__bind(function() {
+            var orig, prop, rec, timePassed;
+            prop = _prop;
+            timePassed = 0;
+            orig = this.gradientRegistry.linear[name][prop];
+            rec = __bind(function() {
+              if (timePassed <= duration) {
+                this.gradientRegistry.linear[name][prop] = easing(timePassed, orig, props[prop] - orig, duration);
+                return setTimeout(__bind(function() {
+                  rec();
+                  return timePassed += 1000 / fps;
+                }, this), 1000 / fps);
+              } else {
+                return this.gradientRegistry.linear[name][prop] = props[prop];
+              }
+            }, this);
+            return rec();
+          }, this))();
+        }
+      }
+      if ((callback != null) && (duration != null) && duration > 0) {
+        return setTimeout(callback, duration);
+      }
+    };
+    Canvas.prototype.gradientRegistry = {
+      linear: {}
     };
     return Canvas;
   })();

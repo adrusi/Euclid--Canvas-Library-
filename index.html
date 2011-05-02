@@ -31,35 +31,70 @@
             height: 300
           });
         */
-        var canvas = new Canvas("canvas", 600, 600);
-        canvas.plot("graph", {
-          x: 200,
-          y: 200,
-          xMin: -20,
-          yMin: -20,
-          xMax: 20,
-          yMax: 20,
-          xScale: 10,
-          yScale: 10,
-          lineColor: rgba(0, 0, 255, 1),
-          lineWidth: 1,
-          equation: function(x, params) {
-            return params[0] * Math.sin(x * params[1]) + params[2];
-          },
-          params: [1, 1, 0]
+        var canvas = new Canvas("canvas", 600, 600), down;
+        // canvas.plot("graph", {
+        //   x: 200,
+        //   y: 200,
+        //   xMin: -20,
+        //   yMin: -20,
+        //   xMax: 20,
+        //   yMax: 20,
+        //   xScale: 10,
+        //   yScale: 10,
+        //   lineColor: rgba(0, 0, 255, 1),
+        //   lineWidth: 1,
+        //   equation: function(x, params) {
+        //     return params[0] * Math.sin(x * params[1]) + params[2];
+        //   },
+        //   params: [1, 1, 0]
+        // });
+        // canvas.arrayAnimate("graph", 0, 5, 3000, "easeInOut");
+        // canvas.arrayAnimate("graph", 1, 3, 2000, "easeOut", function() {
+        //   canvas.arrayAnimate("graph", 1, 0.5, 1000, "easeIn");
+        // });
+        // canvas.arrayAnimate("graph", 2, 10, 1000, "easeOut", function() {
+        //   canvas.arrayAnimate("graph", 2, -10, 1000, "easeInOut", function() {
+        //     canvas.arrayAnimate("graph", 2, 0, 1000, "easeIn");
+        //   });
+        // });
+        // canvas.animate("graph", {
+        //   lineWidth: 5
+        // }, 2500, "linear");
+        canvas.linearGradient({
+          name: "foo",
+          x: 0,
+          y: 0,
+          endX: 0,
+          endY: 600,
+          params: [255, 200],
+          fn: function(top, bottom) {
+            this.addColorStop(0, rgb(top, top, top));
+            this.addColorStop(1, rgb(bottom, bottom, bottom));
+          }
         });
-        canvas.arrayAnimate("graph", 0, 5, 3000, "easeInOut");
-        canvas.arrayAnimate("graph", 1, 3, 2000, "easeOut", function() {
-          canvas.arrayAnimate("graph", 1, 0.5, 1000, "easeIn");
+        canvas.rectangle("background", {
+          height: 600,
+          width: 600,
+          x: 0,
+          y: 0,
+          fillColor: {
+            gradient: "linear",
+            name: "foo"
+          }
         });
-        canvas.arrayAnimate("graph", 2, 10, 1000, "easeOut", function() {
-          canvas.arrayAnimate("graph", 2, -10, 1000, "easeInOut", function() {
-            canvas.arrayAnimate("graph", 2, 0, 1000, "easeIn");
+        canvas.linearGradientAnimate("foo", {
+          params: [200, 255]
+        }, 2000, "linear", function() {
+          canvas.linearGradientAnimate("foo", {
+            params: [0, 0]
+          }, 2000, "linear", function() {
+            canvas.linearGradientAnimate("foo", {
+              params: [200, 255]
+            }, 2000, "linear", function() {
+              console.log(canvas.gradientRegistry);
+            });
           });
         });
-        canvas.animate("graph", {
-          lineWidth: 5
-        }, 2500, "linear");
         canvas.rectangle("box", {
           height: 50,
           width: 50,
@@ -68,15 +103,13 @@
           fillColor: rgba(127, 255, 255, 0),
           strokeColor: rgba(0, 255, 0, 0.5),
           strokeWidth: 10,
-          strokeJoin: "round"
+          strokeJoin: "round",
+          rotate: 0
         });
-        canvas.get("box").events.mousein.notify = function() {
-          console.log("mousein");
-        };
-        canvas.get("box").events.mouseout.notify = function() {
-          console.log("mouseout");
-        };
-        canvas.get("box").events.click.notify = function() {
+        canvas.animate("box", {
+          rotate: 2 * Math.PI
+        }, 2000, "linear");
+        canvas.bindEvent("click", "box", function() {
           canvas.animate("box", {
             strokeWidth: 0
           }, 500, "easeOut", function() {
@@ -84,7 +117,7 @@
               strokeWidth: 10
             }, 500, "easeIn");
           });
-        };
+        });
         canvas.circle("ball", {
           x: 100,
           y: 200,
@@ -92,18 +125,26 @@
           strokeColor: hex("000000"),
           strokeWidth: 5
         });
-        // canvas.path("path", {
-        //   path: function(scale, x, y, bottom, skew) {
-        //     this.lineTo(x + 10 + skew * scale, y);
-        //     this.lineTo(x + bottom * scale, y + 5 * scale);
-        //     this.lineTo(x, y + bottom * scale);
-        //     this.lineTo(x + skew, y);
-        //   },
-        //   params: [5, 20, 20, 5, 0],
-        //   x: 20,
-        //   y: 20,
-        //   fillColor: hex("ff0000")
-        // });
+        down = canvas.bindEvent("mousedown", "ball", function(event) {
+          var downX = event.canvas.x,
+              downY = event.canvas.y,
+              shapeX = event.shape.x,
+              shapeY = event.shape.y;
+          var move = canvas.bindEvent("mousemove", "ball", function(event) {
+            var movedX = event.canvas.x,
+                movedY = event.canvas.y;
+            canvas.circle("ball", {
+              x: downX - shapeX + (movedX - downX),
+              y: downY - shapeY + (movedY - downY)
+            });
+            downX = canvas.get("ball").x;
+            downY = canvas.get("ball").y;
+          });
+          var mouseup = canvas.bindEvent("mouseup", "ball", function() {
+            canvas.removeEvent("mousemove", "ball", move);
+            canvas.removeEvent("mouseup", "ball", mouseup);
+          });
+        });
         canvas.path("path", {
           path: function(_) {
             this.lineTo(_.x + 10 + _.skew * _.scale, _.y);
@@ -122,6 +163,7 @@
           y: 20,
           fillColor: hex("ff0000")
         });
+        canvas.moveBack("path");
         canvas.path("rel", {
           path: function() {
             this.relLineTo(100, 0);
@@ -133,16 +175,30 @@
           y: 250,
           fillColor: rgba(100,100,200,0.4)
         });
-        canvas.get("rel").events.mousein.notify = function() {
+        canvas.moveToFront("box");
+        canvas.bindEvent("mousein", "rel", function() {
           canvas.animate("rel", {
             fillColor: rgba(200, 200, 100, 1)
           }, 500, "easeInOut");
-        };
-        canvas.get("rel").events.mouseout.notify = function() {
+        });
+        canvas.bindEvent("mouseout", "rel", function() {
           canvas.animate("rel", {
             fillColor: rgba(100, 100, 200, 0.4)
           }, 500, "easeInOut");
-        };
+        });
+        canvas.lowLevel("noise", {
+          operation: function(canvas) {
+            var data = this.getImageData(200, 100, 20, 20);
+            for (var row = 50; row < 70; row++) {
+              for (var col = 250; col < 270; col++) {
+                var pixel = data.data[(row - 200) * 200 + (col - 200) * 4],
+                    random = Math.floor(Math.random() * 256);
+                this.fillStyle = rgba(random, random, random, random);
+                this.fillRect(col, row, 1, 1);
+              }
+            }
+          }
+        });
         canvas.autoDraw(); // doesn't use setInterval, rather a recursive setTimeout
         canvas.animate("ball", {
           radius: 50
